@@ -19,13 +19,13 @@ import { ThemeProvider, useTheme } from "./src/contexts/ThemeContext";
 import { useAuthStore } from "./src/store/authStore";
 
 // Screens
-import { RootStackParamList } from "@/types";
 import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
 import { ChatScreen } from "./src/screens/ChatScreen";
 import { ConversationsScreen } from "./src/screens/ConversationsScreen";
 import { FeedScreen } from "./src/screens/FeedScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { RootStackParamList } from "./src/types/index";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
