@@ -16,6 +16,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect } from "react";
 import { auth } from "./src/config/firebase";
 import { ThemeProvider, useTheme } from "./src/contexts/ThemeContext";
+import notificationService from "./src/services/notificationService";
 import { useAuthStore } from "./src/store/authStore";
 
 // Screens
@@ -162,6 +163,9 @@ export default function App() {
   if (!fontsLoaded) {
     return null;
   }
+
+  notificationService.requestPermissions();
+  notificationService.setupNotificationListeners();
 
   return (
     <ThemeProvider>

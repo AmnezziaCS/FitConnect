@@ -19,11 +19,15 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 class NotificationService {
-  // Request permissions
+  private expoPushToken: string | null = null;
+
+  // Request permissions and get Expo Push Token
   async requestPermissions(): Promise<boolean> {
     const { status: existingStatus } =
       await Notifications.getPermissionsAsync();
@@ -47,7 +51,21 @@ class NotificationService {
       });
     }
 
+    // Get Expo Push Token
+    try {
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      this.expoPushToken = token;
+      console.log("Expo Push Token:", token);
+    } catch (error) {
+      console.error("Error getting push token:", error);
+    }
+
     return true;
+  }
+
+  // Get the current push token
+  getExpoPushToken(): string | null {
+    return this.expoPushToken;
   }
 
   // Schedule workout reminder
@@ -56,6 +74,7 @@ class NotificationService {
       hour: time.getHours(),
       minute: time.getMinutes(),
       repeats: true,
+      type: "date",
     };
 
     const notificationId = await Notifications.scheduleNotificationAsync({
@@ -80,7 +99,7 @@ class NotificationService {
     await Notifications.cancelAllScheduledNotificationsAsync();
   }
 
-  // Send like notification
+  // Send like notification (stored in Firestore)
   async sendLikeNotification(
     userId: string,
     likerName: string,
@@ -97,6 +116,13 @@ class NotificationService {
     };
 
     await addDoc(collection(db, "notifications"), notification);
+
+    // You can also send a push notification here using Expo's push service
+    await this.sendPushNotification(
+      userId,
+      notification.title,
+      notification.body
+    );
   }
 
   // Send comment notification
@@ -119,6 +145,11 @@ class NotificationService {
     };
 
     await addDoc(collection(db, "notifications"), notification);
+    await this.sendPushNotification(
+      userId,
+      notification.title,
+      notification.body
+    );
   }
 
   // Send message notification
@@ -139,6 +170,32 @@ class NotificationService {
     };
 
     await addDoc(collection(db, "notifications"), notification);
+    await this.sendPushNotification(
+      userId,
+      notification.title,
+      notification.body
+    );
+  }
+
+  // Send push notification using Expo's push service
+  private async sendPushNotification(
+    userId: string,
+    title: string,
+    body: string
+  ): Promise<void> {
+    // In a real app, you would:
+    // 1. Store user's Expo Push Token in Firestore when they log in
+    // 2. Retrieve the token here
+    // 3. Send to Expo's push notification service
+    // For now, we'll just send a local notification
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+      },
+      trigger: null, // immediate
+    });
   }
 
   // Get user notifications
@@ -169,6 +226,20 @@ class NotificationService {
       .map((n) => this.markAsRead(n.id));
 
     await Promise.all(updatePromises);
+  }
+
+  // Setup notification listeners
+  setupNotificationListeners() {
+    // Listen for notifications received while app is foregrounded
+    Notifications.addNotificationReceivedListener((notification) => {
+      console.log("Notification received:", notification);
+    });
+
+    // Listen for user tapping on notification
+    Notifications.addNotificationResponseReceivedListener((response) => {
+      console.log("Notification tapped:", response);
+      // Handle navigation based on notification data
+    });
   }
 }
 
