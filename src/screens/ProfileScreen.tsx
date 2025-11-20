@@ -88,7 +88,23 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({
   };
 
   if (!user) {
-    return null;
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
+        <Text style={{ color: colors.text, ...typography.body }}>
+          Chargement du profil...
+        </Text>
+        <Button title="Déconnexion" onPress={handleSignOut} />
+      </View>
+    );
   }
 
   return (
