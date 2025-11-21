@@ -1,21 +1,17 @@
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-} from "firebase/auth";
+import { getAuth, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { Platform } from "react-native";
 
 const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyCr7xl5DVJG3OGJpvx9wPT81NIBQ2FkZj4",
+  authDomain: "fitconnect-ece95.firebaseapp.com",
+  projectId: "fitconnect-ece95",
+  storageBucket: "fitconnect-ece95.firebasestorage.app",
+  messagingSenderId: "802646631140",
+  appId: "1:802646631140:web:d24ac4bec6db88e77442f1",
+  measurementId: "G-RRYV5QVV58"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -25,7 +21,9 @@ export const auth =
   Platform.OS === "web"
     ? getAuth(app) // Web uses default browserLocalPersistence
     : initializeAuth(app, {
-        persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+        // Leave default/native persistence. If you install the
+        // `firebase/auth/react-native` helper later, you can enable
+        // `getReactNativePersistence(ReactNativeAsyncStorage)` here.
       });
 
 export const db = getFirestore(app);

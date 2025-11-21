@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -22,6 +22,7 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const loadUserData = useAuthStore((state) => state.loadUserData);
+  // Show the Apple button on iOS but check support at press time.
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -40,40 +41,57 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setLoading(false);
     }
   };
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      await authService.signInWithGoogle();
+      await loadUserData();
+      navigation.replace("Main");
+    } catch (error: any) {
+      Alert.alert("Erreur", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // const handleGoogleLogin = async () => {
-  //   setLoading(true);
-  //   try {
-  //     await authService.signInWithGoogle();
-  //     await loadUserData();
-  //     navigation.replace("Main");
-  //   } catch (error: any) {
-  //     Alert.alert("Erreur", error.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleAppleLogin = async () => {
+    if (Platform.OS !== "ios") {
+      Alert.alert("Non disponible", "La connexion Apple est disponible uniquement sur iOS");
+      return;
+    }
 
-  // const handleAppleLogin = async () => {
-  //   if (Platform.OS !== "ios") {
-  //     Alert.alert(
-  //       "Non disponible",
-  //       "La connexion Apple est disponible uniquement sur iOS"
-  //     );
-  //     return;
-  //   }
+    setLoading(true);
+    try {
+      // dynamic check to avoid runtime errors in Expo Go / unsupported devices
+      try {
+        // @ts-ignore
+        const apple: any = await import("@invertase/react-native-apple-authentication");
+        if (!apple?.isSupported) {
+          Alert.alert(
+            "Non supporté",
+            "Apple Sign-In n'est pas supporté sur cet appareil. Utilisez un appareil iOS 13+ ou un custom dev client."
+          );
+          return;
+        }
+      } catch (e) {
+        Alert.alert(
+          "Non supporté",
+          "Apple Sign-In n'est pas disponible dans cet environnement (Expo Go). Utilisez un custom dev client ou un build iOS."
+        );
+        return;
+      }
 
-  //   setLoading(true);
-  //   try {
-  //     await authService.signInWithApple();
-  //     await loadUserData();
-  //     navigation.replace("Main");
-  //   } catch (error: any) {
-  //     Alert.alert("Erreur", error.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      await authService.signInWithApple();
+      await loadUserData();
+      navigation.replace("Main");
+    } catch (error: any) {
+      Alert.alert("Erreur", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  
 
   return (
     <KeyboardAvoidingView
@@ -155,15 +173,17 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             />
           </View>
 
-          {/* <Button
+          <Button
             title="Continuer avec Google"
             onPress={handleGoogleLogin}
             variant="outline"
             fullWidth
             style={styles.socialButton}
-          /> */}
+          />
 
-          {/* {Platform.OS === "ios" && (
+          {/* Removed runtime Google configuration UI — app.json now holds the client ID */}
+
+          {Platform.OS === "ios" && (
             <Button
               title="Continuer avec Apple"
               onPress={handleAppleLogin}
@@ -171,7 +191,9 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               fullWidth
               style={styles.socialButton}
             />
-          )} */}
+          )}
+
+          {/* configuration modal removed */}
 
           <View style={styles.signupContainer}>
             <Text
@@ -253,4 +275,24 @@ const styles = StyleSheet.create({
   },
   signupText: {},
   signupLink: {},
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContent: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    padding: 10,
+    backgroundColor: "#fff",
+  },
 });

@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.enzai.FitConnect",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -41,6 +45,14 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "GOOGLE_WEB_CLIENT_ID": "802646631140-jdimn7btf39cnv224746t6qgvv2ctruj.apps.googleusercontent.com",
+      "EXPO_USERNAME": "your-expo-username",
+      "eas": {
+        "projectId": "6990401e-a017-4d5d-8186-2ce41541e06a"
+      }
+    },
+    "owner": "enzai"
   }
 }
