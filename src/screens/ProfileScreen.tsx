@@ -20,7 +20,7 @@ import { typography } from "../theme/typography";
 export const ProfileScreen: React.FC<{ navigation: any }> = ({
   navigation,
 }) => {
-  const { colors, isDark, themeMode, setThemeMode } = useTheme();
+  const { colors, themeMode, setThemeMode } = useTheme();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const { totalSteps, isPedometerAvailable } = usePedometer();

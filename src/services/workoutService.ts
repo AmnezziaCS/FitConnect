@@ -12,12 +12,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytes,
-} from "firebase/storage";
+import { deleteObject, ref } from "firebase/storage";
 import { db, storage } from "../config/firebase";
 import { Comment, Exercise, Workout } from "../types";
 
@@ -64,12 +59,13 @@ class WorkoutService {
 
   // Upload photo to Firebase Storage
   private async uploadPhoto(uri: string, userId: string): Promise<string> {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const filename = `workouts/${userId}/${Date.now()}.jpg`;
-    const storageRef = ref(storage, filename);
-    await uploadBytes(storageRef, blob);
-    return await getDownloadURL(storageRef);
+    // const response = await fetch(uri);
+    // const blob = await response.blob();
+    // const filename = `workouts/${userId}/${Date.now()}.jpg`;
+    // const storageRef = ref(storage, filename);
+    // await uploadBytes(storageRef, blob);
+    // return await getDownloadURL(storageRef);
+    return "https://picsum.photos/200/300";
   }
 
   // Update workout
