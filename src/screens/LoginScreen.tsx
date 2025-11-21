@@ -191,7 +191,7 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   typography.bodyMedium,
                 ]}
               >
-                S'inscrire
+                S&apos;inscrire
               </Text>
             </TouchableOpacity>
           </View>

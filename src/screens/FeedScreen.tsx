@@ -70,7 +70,7 @@ export const FeedScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }, typography.h2]}>
-          Fil d'actualité
+          Fil d&apos;actualité
         </Text>
         <TouchableOpacity
           onPress={() => navigation.navigate("AddWorkout")}
