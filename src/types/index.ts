@@ -85,6 +85,7 @@ export type SportType =
 
 export type RootStackParamList = {
   Login: undefined;
+  Signup: undefined;
   Main: undefined;
   AddWorkout: undefined;
   Chat: {

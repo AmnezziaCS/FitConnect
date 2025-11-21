@@ -8,24 +8,26 @@ import {
   Poppins_700Bold,
   useFonts,
 } from "@expo-google-fonts/poppins";
+import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import * as SplashScreen from "expo-splash-screen";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect } from "react";
 import { auth } from "./src/config/firebase";
 import { ThemeProvider, useTheme } from "./src/contexts/ThemeContext";
-import notificationService from "./src/services/notificationService";
 import { useAuthStore } from "./src/store/authStore";
 
 // Screens
+import * as SplashScreen from "expo-splash-screen";
 import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
 import { ChatScreen } from "./src/screens/ChatScreen";
 import { ConversationsScreen } from "./src/screens/ConversationsScreen";
 import { FeedScreen } from "./src/screens/FeedScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { SignupScreen } from "./src/screens/SignupScreen";
+import notificationService from "./src/services/notificationService";
 import { RootStackParamList } from "./src/types/index";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -56,7 +58,9 @@ function MainTabs() {
         component={FeedScreen}
         options={{
           tabBarLabel: "Accueil",
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🏠</span>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
           title: "FitConnect",
         }}
       />
@@ -65,7 +69,9 @@ function MainTabs() {
         component={ConversationsScreen}
         options={{
           tabBarLabel: "Messages",
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>💬</span>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles" size={size} color={color} />
+          ),
           title: "Messages",
         }}
       />
@@ -74,7 +80,9 @@ function MainTabs() {
         component={ProfileScreen}
         options={{
           tabBarLabel: "Profil",
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>👤</span>,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
           title: "Profil",
         }}
       />
@@ -84,7 +92,7 @@ function MainTabs() {
 
 function AppNavigator() {
   const { colors } = useTheme();
-  const { firebaseUser, loading, setFirebaseUser, loadUserData } =
+  const { firebaseUser, loading, setLoading, setFirebaseUser, loadUserData } =
     useAuthStore();
 
   useEffect(() => {
@@ -93,6 +101,8 @@ function AppNavigator() {
       if (user) {
         await loadUserData();
       }
+
+      setLoading(false);
     });
 
     return unsubscribe;
@@ -115,11 +125,18 @@ function AppNavigator() {
       }}
     >
       {!firebaseUser ? (
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
+        <>
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Signup"
+            component={SignupScreen}
+            options={{ headerShown: false }}
+          />
+        </>
       ) : (
         <>
           <Stack.Screen

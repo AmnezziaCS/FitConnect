@@ -41,39 +41,39 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    try {
-      await authService.signInWithGoogle();
-      await loadUserData();
-      navigation.replace("Main");
-    } catch (error: any) {
-      Alert.alert("Erreur", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleGoogleLogin = async () => {
+  //   setLoading(true);
+  //   try {
+  //     await authService.signInWithGoogle();
+  //     await loadUserData();
+  //     navigation.replace("Main");
+  //   } catch (error: any) {
+  //     Alert.alert("Erreur", error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const handleAppleLogin = async () => {
-    if (Platform.OS !== "ios") {
-      Alert.alert(
-        "Non disponible",
-        "La connexion Apple est disponible uniquement sur iOS"
-      );
-      return;
-    }
+  // const handleAppleLogin = async () => {
+  //   if (Platform.OS !== "ios") {
+  //     Alert.alert(
+  //       "Non disponible",
+  //       "La connexion Apple est disponible uniquement sur iOS"
+  //     );
+  //     return;
+  //   }
 
-    setLoading(true);
-    try {
-      await authService.signInWithApple();
-      await loadUserData();
-      navigation.replace("Main");
-    } catch (error: any) {
-      Alert.alert("Erreur", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   setLoading(true);
+  //   try {
+  //     await authService.signInWithApple();
+  //     await loadUserData();
+  //     navigation.replace("Main");
+  //   } catch (error: any) {
+  //     Alert.alert("Erreur", error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <KeyboardAvoidingView
@@ -155,15 +155,15 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             />
           </View>
 
-          <Button
+          {/* <Button
             title="Continuer avec Google"
             onPress={handleGoogleLogin}
             variant="outline"
             fullWidth
             style={styles.socialButton}
-          />
+          /> */}
 
-          {Platform.OS === "ios" && (
+          {/* {Platform.OS === "ios" && (
             <Button
               title="Continuer avec Apple"
               onPress={handleAppleLogin}
@@ -171,7 +171,7 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               fullWidth
               style={styles.socialButton}
             />
-          )}
+          )} */}
 
           <View style={styles.signupContainer}>
             <Text
