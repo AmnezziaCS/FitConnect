@@ -23,8 +23,11 @@ import * as SplashScreen from "expo-splash-screen";
 import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
 import { ChatScreen } from "./src/screens/ChatScreen";
 import { ConversationsScreen } from "./src/screens/ConversationsScreen";
+import { EditProfileScreen } from "./src/screens/EditProfileScreen";
 import { FeedScreen } from "./src/screens/FeedScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { MyWorkoutsScreen } from "./src/screens/MyWorkoutsScreen";
+import { NotificationsScreen } from "./src/screens/NotificationScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SignupScreen } from "./src/screens/SignupScreen";
 import notificationService from "./src/services/notificationService";
@@ -148,6 +151,21 @@ function AppNavigator() {
             name="AddWorkout"
             component={AddWorkoutScreen}
             options={{ title: "Nouvel entraînement" }}
+          />
+          <Stack.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ title: "Notifications" }}
+          />
+          <Stack.Screen
+            name="MyWorkouts"
+            component={MyWorkoutsScreen}
+            options={{ title: "Mes entraînements" }}
+          />
+          <Stack.Screen
+            name="EditProfile"
+            component={EditProfileScreen}
+            options={{ title: "Modifier le profil" }}
           />
           <Stack.Screen
             name="Chat"

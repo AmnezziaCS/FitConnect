@@ -88,6 +88,9 @@ export type RootStackParamList = {
   Signup: undefined;
   Main: undefined;
   AddWorkout: undefined;
+  EditProfile: undefined;
+  Notifications: undefined;
+  MyWorkouts: undefined;
   Chat: {
     conversationId: string;
     otherUserId: string;
