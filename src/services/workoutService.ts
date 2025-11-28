@@ -20,11 +20,53 @@ import {
 } from "firebase/storage";
 import { db, storage } from "../config/firebase";
 import { Comment, Exercise, Workout } from "../types";
-import notificationService from "./notificationService";
+
+const WORKOUTS_COLLECTION = "workouts";
+
+const sanitize = <T extends Record<string, any>>(data: T): T => {
+  const result: Record<string, any> = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) {
+      result[key] = value;
+    }
+  });
+  return result as T;
+};
+
+const toDate = (value: any): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value);
+  if (typeof value === "string") return new Date(value);
+  if (value?.toDate) return value.toDate();
+  return new Date(value);
+};
+
+const mapWorkout = (id: string, data: any): Workout => ({
+  id,
+  userId: data.userId,
+  userName: data.userName,
+  userPhoto: data.userPhoto ?? null,
+  date: toDate(data.date),
+  duration: data.duration,
+  notes: data.notes || "",
+  feeling: data.feeling ?? 5,
+  photoURL: data.photoURL ?? null,
+  photoPath: data.photoPath ?? null,
+  type: data.type,
+  exercises: data.exercises ?? null,
+  distance: data.distance ?? null,
+  likes: data.likes || [],
+  comments: (data.comments || []).map((comment: Comment) => ({
+    ...comment,
+    userPhoto: comment.userPhoto ?? null,
+    createdAt: toDate(comment.createdAt),
+  })),
+  createdAt: toDate(data.createdAt),
+});
 
 class WorkoutService {
-  // Create workout
-  async createWorkout(
+  async addWorkout(
     userId: string,
     userName: string,
     userPhoto: string | undefined,
@@ -33,185 +75,179 @@ class WorkoutService {
       duration: number;
       notes: string;
       feeling: number;
-      photoURI: string;
+      photoURI?: string | null;
       type: "musculation" | "running" | "other";
       exercises?: Exercise[];
       distance?: number;
     }
   ): Promise<string> {
-    // Upload photo
-    const photoURL = await this.uploadPhoto(data.photoURI, userId);
-
     const workout: Omit<Workout, "id"> = {
       userId,
       userName,
-      userPhoto,
+      userPhoto: userPhoto ?? null,
       date: data.date,
       duration: data.duration,
       notes: data.notes,
       feeling: data.feeling,
-      photoURL,
+      photoURL: null,
+      photoPath: null,
       type: data.type,
-      exercises: data.exercises,
-      distance: data.distance,
+      exercises: data.exercises ?? null,
+      distance: typeof data.distance === "number" ? data.distance : null,
       likes: [],
       comments: [],
       createdAt: new Date(),
     };
 
-    const docRef = await addDoc(collection(db, "workouts"), workout);
+    if (data.photoURI) {
+      const { url, path } = await this.uploadPhoto(data.photoURI, userId);
+      workout.photoURL = url;
+      workout.photoPath = path;
+    }
+
+    const docRef = await addDoc(collection(db, WORKOUTS_COLLECTION), workout);
     return docRef.id;
   }
 
-  // Upload photo to Firebase Storage
-  private async uploadPhoto(uri: string, userId: string): Promise<string> {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const filename = `workouts/${userId}/${Date.now()}.jpg`;
-    const storageRef = ref(storage, filename);
-    await uploadBytes(storageRef, blob);
-    return await getDownloadURL(storageRef);
-  }
-
-  // Update workout
-  async updateWorkout(
-    workoutId: string,
-    updates: Partial<Workout>
-  ): Promise<void> {
-    const workoutRef = doc(db, "workouts", workoutId);
-    await updateDoc(workoutRef, updates);
-  }
-
-  // Delete workout
-  async deleteWorkout(workoutId: string): Promise<void> {
-    const workoutRef = doc(db, "workouts", workoutId);
-    const workoutDoc = await getDoc(workoutRef);
-
-    if (workoutDoc.exists()) {
-      const workout = workoutDoc.data() as Workout;
-      // Delete photo from storage
-      if (workout.photoURL) {
-        const photoRef = ref(storage, workout.photoURL);
-        await deleteObject(photoRef);
-      }
-    }
-
-    await deleteDoc(workoutRef);
-  }
-
-  // Get user workouts
   async getUserWorkouts(userId: string): Promise<Workout[]> {
     const q = query(
-      collection(db, "workouts"),
+      collection(db, WORKOUTS_COLLECTION),
       where("userId", "==", userId),
       orderBy("date", "desc")
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as Workout)
-    );
+    return snapshot.docs.map((d) => mapWorkout(d.id, d.data()));
   }
 
-  // Get feed workouts (user + friends)
-  async getFeedWorkouts(
-    userId: string,
-    friendIds: string[]
-  ): Promise<Workout[]> {
-    const userIds = [userId, ...friendIds];
+  async getFeedWorkouts(userId: string, friends: string[]): Promise<Workout[]> {
+    const ids = Array.from(new Set([userId, ...(friends || [])])).slice(0, 10);
+    if (ids.length === 0) return [];
+
     const q = query(
-      collection(db, "workouts"),
-      where("userId", "in", userIds),
-      orderBy("createdAt", "desc")
+      collection(db, WORKOUTS_COLLECTION),
+      where("userId", "in", ids)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as Workout)
+    const workouts = snapshot.docs.map((d) => mapWorkout(d.id, d.data()));
+
+    return workouts.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
     );
   }
 
-  // Toggle like
-  async toggleLike(workoutId: string, userId: string, userName?: string): Promise<void> {
-    const workoutRef = doc(db, "workouts", workoutId);
-    const workoutDoc = await getDoc(workoutRef);
-
-    if (workoutDoc.exists()) {
-      const workout = workoutDoc.data() as Workout;
-      const hasLiked = workout.likes.includes(userId);
-
-      if (hasLiked) {
-        await updateDoc(workoutRef, {
-          likes: arrayRemove(userId),
-        });
-      } else {
-        await updateDoc(workoutRef, {
-          likes: arrayUnion(userId),
-        });
-        // Send notification to the workout owner (don't notify if user likes their own workout)
-        try {
-          if (workout.userId !== userId) {
-            await notificationService.sendLikeNotification(
-              workout.userId,
-              userName || "Quelqu'un",
-              workoutId
-            );
-          }
-        } catch (e) {
-          // ignore notification errors
-        }
-      }
-    }
+  async getWorkoutById(workoutId: string): Promise<Workout | null> {
+    const snap = await getDoc(doc(db, WORKOUTS_COLLECTION, workoutId));
+    if (!snap.exists()) return null;
+    return mapWorkout(snap.id, snap.data());
   }
 
-  // Add comment
+  async updateWorkout(
+    workoutId: string,
+    data: Partial<Workout>,
+    options?: { newPhotoURI?: string | null; removePhoto?: boolean }
+  ) {
+    const refDoc = doc(db, WORKOUTS_COLLECTION, workoutId);
+    const snapshot = await getDoc(refDoc);
+    if (!snapshot.exists()) return;
+
+    const updates: Partial<Workout> = { ...data };
+    const current = snapshot.data() as Workout;
+
+    if (options?.removePhoto) {
+      if (current.photoPath) {
+        await this.deletePhoto(current.photoPath);
+      }
+      updates.photoURL = null;
+      updates.photoPath = null;
+    }
+
+    if (options?.newPhotoURI) {
+      const { url, path } = await this.uploadPhoto(
+        options.newPhotoURI,
+        current.userId
+      );
+      updates.photoURL = url;
+      updates.photoPath = path;
+
+      if (current.photoPath) {
+        await this.deletePhoto(current.photoPath);
+      }
+    }
+
+    const sanitizedUpdates = sanitize(updates);
+    if (Object.keys(sanitizedUpdates).length === 0) {
+      return;
+    }
+    await updateDoc(refDoc, sanitizedUpdates);
+  }
+
+  async deleteWorkout(workoutId: string) {
+    const refDoc = doc(db, WORKOUTS_COLLECTION, workoutId);
+    const snapshot = await getDoc(refDoc);
+
+    if (snapshot.exists()) {
+      const workout = snapshot.data() as Workout;
+      if (workout.photoPath) {
+        await this.deletePhoto(workout.photoPath);
+      }
+    }
+
+    await deleteDoc(refDoc);
+  }
+
+  async toggleLike(workoutId: string, userId: string) {
+    const refDoc = doc(db, WORKOUTS_COLLECTION, workoutId);
+    const snap = await getDoc(refDoc);
+    if (!snap.exists()) return;
+
+    const data = snap.data() as Workout;
+    const liked = (data.likes || []).includes(userId);
+
+    await updateDoc(refDoc, {
+      likes: liked ? arrayRemove(userId) : arrayUnion(userId),
+    });
+  }
+
   async addComment(
     workoutId: string,
     userId: string,
     userName: string,
     userPhoto: string | undefined,
     text: string
-  ): Promise<void> {
-    const comment: Omit<Comment, "id"> = {
+  ) {
+    const comment: Comment = {
+      id: Date.now().toString(),
       userId,
       userName,
-      userPhoto,
+      userPhoto: userPhoto ?? null,
       text,
       createdAt: new Date(),
     };
 
-    const workoutRef = doc(db, "workouts", workoutId);
-    await updateDoc(workoutRef, {
-      comments: arrayUnion({ ...comment, id: Date.now().toString() }),
-    });
-    // Notify workout owner about the new comment (avoid notifying self)
-    try {
-      const workoutDoc = await getDoc(workoutRef);
-      if (workoutDoc.exists()) {
-        const workout = workoutDoc.data() as Workout;
-        if (workout.userId !== userId) {
-          await notificationService.sendCommentNotification(
-            workout.userId,
-            userName,
-            workoutId,
-            text
-          );
-        }
-      }
-    } catch (e) {
-      // ignore notification errors
-    }
+    await updateDoc(
+      doc(db, WORKOUTS_COLLECTION, workoutId),
+      sanitize({
+        comments: arrayUnion(comment),
+      })
+    );
   }
 
-  // Delete comment
-  async deleteComment(workoutId: string, commentId: string): Promise<void> {
-    const workoutRef = doc(db, "workouts", workoutId);
-    const workoutDoc = await getDoc(workoutRef);
+  private async uploadPhoto(uri: string, userId: string) {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const path = `workouts/${userId}/${Date.now()}.jpg`;
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, blob);
+    const url = await getDownloadURL(storageRef);
+    return { url, path };
+  }
 
-    if (workoutDoc.exists()) {
-      const workout = workoutDoc.data() as Workout;
-      const updatedComments = workout.comments.filter(
-        (c) => c.id !== commentId
-      );
-      await updateDoc(workoutRef, { comments: updatedComments });
+  private async deletePhoto(path: string) {
+    try {
+      const storageRef = ref(storage, path);
+      await deleteObject(storageRef);
+    } catch (error) {
+      console.warn("Impossible de supprimer la photo:", error);
     }
   }
 }

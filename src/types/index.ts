@@ -12,26 +12,6 @@ export interface User {
   friends: string[];
 }
 
-export interface Workout {
-  id: string;
-  userId: string;
-  userName: string;
-  userPhoto?: string;
-  date: Date;
-  duration: number; // in minutes
-  notes: string;
-  feeling: number; // 1-10
-  photoURL: string;
-  type: "musculation" | "running" | "other";
-  // For musculation
-  exercises?: Exercise[];
-  // For running
-  distance?: number; // in km
-  likes: string[]; // user IDs who liked
-  comments: Comment[];
-  createdAt: Date;
-}
-
 export interface Exercise {
   name: string;
   sets: number;
@@ -42,8 +22,27 @@ export interface Comment {
   id: string;
   userId: string;
   userName: string;
-  userPhoto?: string;
+  userPhoto?: string | null;
   text: string;
+  createdAt: Date;
+}
+
+export interface Workout {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhoto?: string | null;
+  date: Date;
+  duration: number;
+  notes: string;
+  feeling: number;
+  photoURL?: string | null;
+  photoPath?: string | null;
+  type: "musculation" | "running" | "other";
+  exercises?: Exercise[] | null;
+  distance?: number | null;
+  likes: string[];
+  comments: Comment[];
   createdAt: Date;
 }
 
@@ -90,6 +89,8 @@ export type RootStackParamList = {
   AddWorkout: undefined;
   EditProfile: undefined;
   Notifications: undefined;
+  WorkoutDetail: { workoutId: string };
+  EditWorkout: { workoutId: string };
   MyWorkouts: undefined;
   Chat: {
     conversationId: string;

@@ -52,6 +52,11 @@ class NotificationService {
     }
 
     // Get Expo Push Token
+    // Note: Push token registration is disabled. To enable:
+    // 1. Run: npx expo login
+    // 2. Run: npx eas init
+    // 3. Uncomment the code below
+    /*
     try {
       const token = (await Notifications.getExpoPushTokenAsync()).data;
       this.expoPushToken = token;
@@ -59,6 +64,7 @@ class NotificationService {
     } catch (error) {
       console.error("Error getting push token:", error);
     }
+    */
 
     return true;
   }
@@ -85,11 +91,10 @@ class NotificationService {
 
   // Schedule workout reminder
   async scheduleWorkoutReminder(time: Date): Promise<string> {
-    const trigger: Notifications.NotificationTriggerInput = {
+    const trigger: Notifications.DailyTriggerInput = {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour: time.getHours(),
       minute: time.getMinutes(),
-      repeats: true,
-      type: "date",
     };
 
     const notificationId = await Notifications.scheduleNotificationAsync({

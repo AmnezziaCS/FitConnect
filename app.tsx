@@ -104,7 +104,6 @@ function AppNavigator() {
       if (user) {
         await loadUserData();
       }
-
       setLoading(false);
     });
 
@@ -147,11 +146,13 @@ function AppNavigator() {
             component={MainTabs}
             options={{ headerShown: false }}
           />
+
           <Stack.Screen
             name="AddWorkout"
             component={AddWorkoutScreen}
             options={{ title: "Nouvel entraînement" }}
           />
+
           <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
@@ -174,7 +175,6 @@ function AppNavigator() {
               title: route.params?.otherUserName || "Chat",
             })}
           />
-          
         </>
       )}
     </Stack.Navigator>

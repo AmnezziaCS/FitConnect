@@ -1,179 +1,97 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { Text } from "@rneui/themed";
 import React, { useEffect, useState } from "react";
 import {
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { WorkoutCard } from "../components/WorkoutCard";
-import { useTheme } from "../contexts/ThemeContext";
 import workoutService from "../services/workoutService";
 import { useAuthStore } from "../store/authStore";
-import { typography } from "../theme/typography";
-import { Workout } from "../types";
+import { RootStackParamList, Workout } from "../types";
 
-export const FeedScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { colors } = useTheme();
-  const user = useAuthStore((state) => state.user);
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "../contexts/ThemeContext";
+
+export const FeedScreen: React.FC = () => {
+  const user = useAuthStore((s) => s.user);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors } = useTheme();
+
+  const load = async () => {
+    if (!user) return;
+    try {
+      const data = await workoutService.getFeedWorkouts(
+        user.id,
+        user.friends || []
+      );
+      setWorkouts(data);
+    } catch (e) {
+      Alert.alert("Erreur", "Impossible de charger le feed");
+    }
+  };
 
   useEffect(() => {
-    // Retry loading when the auth `user` becomes available.
-    // If there's no user, stop the local loading spinner instead of hanging.
-    if (user) {
-      loadWorkouts();
-    } else {
-      setLoading(false);
-    }
+    load();
   }, [user]);
-
-  const loadWorkouts = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const friends = Array.isArray(user.friends) ? user.friends : [];
-      const data = await workoutService.getFeedWorkouts(user.id, friends);
-      setWorkouts(data);
-    } catch (error) {
-      console.error("Error loading workouts:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadWorkouts();
-  };
-
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          styles.centered,
-          { backgroundColor: colors.background },
-        ]}
-      >
-        <Text
-          style={[
-            styles.loadingText,
-            { color: colors.textSecondary },
-            typography.body,
-          ]}
-        >
-          Chargement...
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }, typography.h2]}>
-          Fil d&apos;actualité
-        </Text>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("AddWorkout")}
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-        >
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-
-      {workouts.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text
-            style={[
-              styles.emptyText,
-              { color: colors.textSecondary },
-              typography.body,
-            ]}
-          >
-            Aucun entraînement pour le moment
+      <FlatList
+        data={workouts}
+        keyExtractor={(i) => i.id}
+        renderItem={({ item }) => (
+          <WorkoutCard workout={item} onUpdate={load} />
+        )}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={load} />
+        }
+        ListEmptyComponent={
+          <Text style={[styles.empty, { color: colors.textSecondary }]}>
+            Aucun entraînement trouvé.
           </Text>
-          <Text
-            style={[
-              styles.emptySubtext,
-              { color: colors.textTertiary },
-              typography.small,
-            ]}
-          >
-            Commence par ajouter ton premier entraînement ou ajoute des amis !
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={workouts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <WorkoutCard workout={item} onUpdate={loadWorkouts} />
-          )}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-            />
-          }
-        />
-      )}
+        }
+        contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+      />
+      <TouchableOpacity
+        style={[
+          styles.fab,
+          { backgroundColor: colors.primary, shadowColor: colors.shadow },
+        ]}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate("AddWorkout")}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
+  container: { flex: 1 },
+  empty: { textAlign: "center", marginTop: 40, color: "#777" },
+  fab: {
+    position: "absolute",
+    bottom: 32,
+    right: 24,
+    backgroundColor: "#FF6B6B",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-  },
-  loadingText: {},
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {},
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  addButtonText: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    lineHeight: 28,
-  },
-  list: {
-    padding: 16,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    textAlign: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 });
