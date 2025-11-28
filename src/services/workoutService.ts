@@ -118,15 +118,61 @@ class WorkoutService {
     friendIds: string[]
   ): Promise<Workout[]> {
     const userIds = [userId, ...friendIds];
-    const q = query(
-      collection(db, "workouts"),
-      where("userId", "in", userIds),
-      orderBy("createdAt", "desc")
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as Workout)
-    );
+
+    // Firestore 'in' queries are limited and sometimes require composite indexes.
+    // To be robust we split userIds into chunks of <= 10 and run multiple
+    // queries, then merge, deduplicate and sort results by createdAt desc.
+    const chunks: string[][] = [];
+    for (let i = 0; i < userIds.length; i += 10) {
+      chunks.push(userIds.slice(i, i + 10));
+    }
+
+    const allDocs: any[] = [];
+
+    // If there's only one chunk we can run the simple query.
+    if (chunks.length === 1) {
+      const q = query(
+        collection(db, "workouts"),
+        where("userId", "in", chunks[0]),
+        orderBy("createdAt", "desc")
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+    }
+
+    // Multiple chunks: run queries in parallel, without assuming composite index.
+    const promises = chunks.map((chunk) => {
+      const q = query(
+        collection(db, "workouts"),
+        where("userId", "in", chunk),
+        orderBy("createdAt", "desc")
+      );
+      return getDocs(q);
+    });
+
+    const snapshots = await Promise.all(promises);
+    for (const snap of snapshots) {
+      for (const d of snap.docs) {
+        allDocs.push({ id: d.id, ...d.data() });
+      }
+    }
+
+    // Deduplicate by id
+    const map = new Map<string, any>();
+    for (const item of allDocs) {
+      map.set(item.id, item);
+    }
+
+    const merged = Array.from(map.values()) as Workout[];
+
+    // Sort by createdAt desc. Firestore createdAt may be a Timestamp or Date.
+    merged.sort((a, b) => {
+      const aTime = a.createdAt && (a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime());
+      const bTime = b.createdAt && (b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime());
+      return (bTime || 0) - (aTime || 0);
+    });
+
+    return merged;
   }
 
   // Toggle like

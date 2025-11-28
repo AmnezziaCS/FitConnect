@@ -1,12 +1,12 @@
 import {
-  arrayRemove,
-  arrayUnion,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
+    arrayRemove,
+    arrayUnion,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    updateDoc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "../config/firebase";
@@ -72,13 +72,21 @@ class UserService {
     const q = query(usersRef);
     const snapshot = await getDocs(q);
 
+    const queryNorm = (searchQuery || "").trim().toLowerCase();
+
     const users = snapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() } as User))
-      .filter(
-        (user) =>
-          user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      .filter((user) => {
+        const name = (user.displayName || "").toString().toLowerCase();
+        const email = (user.email || "").toString().toLowerCase();
+
+        // If the query looks like an email, prefer exact email matches.
+        if (queryNorm.includes("@")) {
+          return email === queryNorm;
+        }
+
+        return name.includes(queryNorm) || email.includes(queryNorm);
+      });
 
     return users;
   }

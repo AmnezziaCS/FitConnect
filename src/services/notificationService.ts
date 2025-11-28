@@ -247,16 +247,29 @@ class NotificationService {
 
   // Get user notifications
   async getUserNotifications(userId: string): Promise<NotificationType[]> {
-    const q = query(
-      collection(db, "notifications"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
+    try {
+      const q = query(
+        collection(db, "notifications"),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
 
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as NotificationType)
-    );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as NotificationType)
+      );
+    } catch (e: any) {
+      // If the query fails (missing index or other issue), log helpful info
+      console.warn("getUserNotifications failed:", e?.message || e);
+      // If Firestore suggests creating an index, surface the link in the console
+      if (e && e.message && e.message.includes("requires an index")) {
+        console.warn(
+          "Firestore query requires an index. Create it via the Firebase Console (see error link above)."
+        );
+      }
+      // Return an empty list so the UI can continue to function.
+      return [];
+    }
   }
 
   // Mark notification as read
