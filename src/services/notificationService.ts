@@ -5,10 +5,9 @@ import {
     doc,
     getDoc,
     getDocs,
-    orderBy,
     query,
     updateDoc,
-    where,
+    where
 } from "firebase/firestore";
 import { Platform } from "react-native";
 import { db } from "../config/firebase";
@@ -247,16 +246,27 @@ class NotificationService {
 
   // Get user notifications
   async getUserNotifications(userId: string): Promise<NotificationType[]> {
-    const q = query(
-      collection(db, "notifications"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
+    try {
+      const q = query(collection(db, "notifications"), where("userId", "==", userId));
+      const snapshot = await getDocs(q);
+      const results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as NotificationType));
 
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as NotificationType)
-    );
+      // Sort client-side by createdAt (robust to Firestore Timestamp or Date)
+      const getTime = (n: NotificationType) => {
+        const v: any = n.createdAt;
+        if (!v) return 0;
+        if (typeof v === "number") return v;
+        if (v instanceof Date) return v.getTime();
+        if (v.toDate && typeof v.toDate === "function") return v.toDate().getTime();
+        if (v.seconds) return v.seconds * 1000; // Firestore Timestamp-like
+        return 0;
+      };
+
+      return results.sort((a, b) => getTime(b) - getTime(a));
+    } catch (e: any) {
+      console.warn("getUserNotifications failed:", e?.message || e);
+      return [];
+    }
   }
 
   // Mark notification as read

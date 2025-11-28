@@ -1,12 +1,12 @@
 import {
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
 } from "@expo-google-fonts/inter";
 import {
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    useFonts,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  useFonts,
 } from "@expo-google-fonts/poppins";
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -174,11 +174,7 @@ function AppNavigator() {
               title: route.params?.otherUserName || "Chat",
             })}
           />
-          <Stack.Screen
-            name="Notifications"
-            component={require("./src/screens/NotificationsScreen").NotificationsScreen}
-            options={{ title: "Notifications" }}
-          />
+          
         </>
       )}
     </Stack.Navigator>
