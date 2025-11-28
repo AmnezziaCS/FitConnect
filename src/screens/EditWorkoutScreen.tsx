@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -21,13 +21,13 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import workoutService from "../services/workoutService";
-import { Exercise, RootStackParamList } from "../types";
+import { Exercise, RootStackParamList, Workout } from "../types";
 import { useAuthStore } from "../store/authStore";
 import { useTheme } from "../contexts/ThemeContext";
 
-type Props = NativeStackScreenProps<RootStackParamList, "AddWorkout">;
+type Props = NativeStackScreenProps<RootStackParamList, "EditWorkout">;
 
-const workoutTypes: {
+const typeOptions: {
   label: string;
   value: "musculation" | "running" | "other";
 }[] = [
@@ -36,83 +36,110 @@ const workoutTypes: {
   { label: "Autre", value: "other" },
 ];
 
-export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
+export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { workoutId } = route.params;
   const user = useAuthStore((state) => state.user);
   const { colors } = useTheme();
+  const [loading, setLoading] = useState(true);
+  const [workout, setWorkout] = useState<Workout | null>(null);
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [typeIndex, setTypeIndex] = useState(0);
   const [duration, setDuration] = useState("");
   const [distance, setDistance] = useState("");
   const [notes, setNotes] = useState("");
-  const [feeling, setFeeling] = useState(6);
+  const [feeling, setFeeling] = useState(5);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseName, setExerciseName] = useState("");
   const [sets, setSets] = useState("");
   const [reps, setReps] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoReplacement, setPhotoReplacement] = useState<string | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const currentType = useMemo(
-    () => workoutTypes[typeIndex].value as "musculation" | "running" | "other",
+    () => typeOptions[typeIndex]?.value ?? "other",
     [typeIndex]
   );
 
-  const askPermission = async (permission: ImagePicker.PermissionStatus) => {
-    if (permission !== ImagePicker.PermissionStatus.GRANTED) {
-      Alert.alert(
-        "Autorisation requise",
-        "Nous avons besoin d'accéder à la caméra ou à la galerie."
-      );
+  useEffect(() => {
+    loadWorkout();
+  }, [workoutId]);
+
+  const loadWorkout = async () => {
+    try {
+      setLoading(true);
+      const data = await workoutService.getWorkoutById(workoutId);
+      if (!data) {
+        Alert.alert("Oups", "Entraînement introuvable", [
+          { text: "OK", onPress: () => navigation.goBack() },
+        ]);
+        return;
+      }
+      setWorkout(data);
+      setDate(new Date(data.date));
+      setDuration(data.duration.toString());
+      setNotes(data.notes || "");
+      setFeeling(data.feeling);
+      const index = typeOptions.findIndex((opt) => opt.value === data.type);
+      setTypeIndex(index >= 0 ? index : 0);
+      setExercises(data.exercises || []);
+      setDistance(data.distance ? data.distance.toString() : "");
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de charger cet entraînement.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const askPermission = async (status: ImagePicker.PermissionStatus) => {
+    if (status !== ImagePicker.PermissionStatus.GRANTED) {
+      Alert.alert("Autorisation requise", "Active l'accès caméra/galerie pour changer la photo.");
       return false;
     }
     return true;
   };
 
-  const handleTakePhoto = async () => {
+  const changePhotoFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (!(await askPermission(status))) return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.7,
-      base64: false,
-    });
-
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+      setPhotoReplacement(result.assets[0].uri);
+      setRemovePhoto(false);
     }
   };
 
-  const handlePickPhoto = async () => {
+  const changePhotoFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!(await askPermission(status))) return;
-
     const result = await ImagePicker.launchImageLibraryAsync({
-      quality: 0.7,
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
     });
-
     if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+      setPhotoReplacement(result.assets[0].uri);
+      setRemovePhoto(false);
     }
   };
 
   const handleRemovePhoto = () => {
-    setPhoto(null);
+    setPhotoReplacement(null);
+    setRemovePhoto(true);
+  };
+
+  const handleResetPhoto = () => {
+    setPhotoReplacement(null);
+    setRemovePhoto(false);
   };
 
   const addExercise = () => {
     if (!exerciseName || !sets || !reps) {
-      return Alert.alert("Champs manquants", "Complète l'exercice avant d'ajouter");
+      return Alert.alert("Champs manquants", "Complète l'exercice avant de l'ajouter.");
     }
-
     setExercises((prev) => [
       ...prev,
-      {
-        name: exerciseName,
-        sets: Number(sets),
-        reps: Number(reps),
-      },
+      { name: exerciseName, sets: Number(sets), reps: Number(reps) },
     ]);
     setExerciseName("");
     setSets("");
@@ -125,12 +152,12 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
 
   const validate = () => {
     if (!user) {
-      Alert.alert("Connexion requise", "Reconnecte-toi pour ajouter un entraînement");
+      Alert.alert("Connexion requise", "Reconnecte-toi pour modifier ton entraînement.");
       return false;
     }
 
-    if (!duration || Number(duration) <= 0) {
-      Alert.alert("Durée obligatoire", "Indique la durée de l'entraînement.");
+    if (!duration) {
+      Alert.alert("Durée", "Indique la durée de la séance.");
       return false;
     }
 
@@ -148,39 +175,57 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validate() || !user) return;
+    if (!validate()) return;
 
     try {
       setSubmitting(true);
-      await workoutService.addWorkout(user.id, user.displayName, user.photoURL, {
-        date,
-        duration: Number(duration),
-        notes,
-        feeling,
-        photoURI: photo || undefined,
-        type: currentType,
-        exercises: currentType === "musculation" ? exercises : null,
-        distance: currentType === "running" ? Number(distance) : null,
-      });
-      Alert.alert("Bravo !", "Ton entraînement a été publié.");
-      navigation.goBack();
+      await workoutService.updateWorkout(
+        workoutId,
+        {
+          date,
+          duration: Number(duration),
+          notes,
+          feeling,
+          type: currentType,
+          exercises: currentType === "musculation" ? exercises : null,
+          distance: currentType === "running" ? Number(distance) : null,
+        },
+        {
+          newPhotoURI: photoReplacement || undefined,
+          removePhoto: removePhoto && !photoReplacement,
+        }
+      );
+      Alert.alert("Mis à jour", "Ton entraînement a été modifié.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
     } catch (error: any) {
-      Alert.alert("Erreur", error?.message || "Impossible d'enregistrer l'entraînement.");
+      Alert.alert("Erreur", error?.message || "Impossible de sauvegarder les modifications.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <Text>Chargement...</Text>
+      </View>
+    );
+  }
+
+  if (!workout) {
+    return null;
+  }
+
+  const photoPreview = photoReplacement || (removePhoto ? null : workout.photoURL);
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
-      <Text h3 style={[styles.screenTitle, { color: colors.text }]}>
-        Nouvel entraînement
-      </Text>
-      <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-        Partage ta séance avec tes amis 💪
+      <Text h3 style={[styles.title, { color: colors.text }]}>
+        Modifier l'entraînement
       </Text>
 
       <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -207,50 +252,64 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
 
       <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Card.Title>Photo (facultatif)</Card.Title>
-        {photo ? (
+        {photoPreview ? (
           <>
-            <Image source={{ uri: photo }} style={styles.photo} />
+            <Image source={{ uri: photoPreview }} style={styles.photo} />
             <View style={styles.photoActions}>
               <Button
-                title="Reprendre"
+                title="Caméra"
                 icon={{ name: "camera", type: "feather", size: 18 }}
-                onPress={handleTakePhoto}
+                onPress={changePhotoFromCamera}
                 buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
               />
               <Button
-                title="Bibliothèque"
+                title="Galerie"
                 type="outline"
                 icon={{ name: "image", type: "feather", size: 18 }}
-                onPress={handlePickPhoto}
+                onPress={changePhotoFromLibrary}
                 buttonStyle={{ borderColor: colors.primary }}
                 titleStyle={{ color: colors.primary }}
-                iconContainerStyle={{ marginRight: 6 }}
               />
               <Button
                 title="Retirer"
                 type="clear"
-                icon={{ name: "trash-2", type: "feather", size: 18, color: "#ff6b6b" }}
-                onPress={handleRemovePhoto}
+                icon={{ name: "trash-2", type: "feather", color: "#ff6b6b" }}
                 titleStyle={{ color: "#ff6b6b" }}
+                onPress={handleRemovePhoto}
               />
             </View>
           </>
         ) : (
-          <View style={styles.photoActions}>
-            <Button
-              title="Prendre une photo"
-              icon={{ name: "camera", type: "feather", size: 18 }}
-              onPress={handleTakePhoto}
-              buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
-            />
-            <Button
-              title="Depuis la galerie"
-              type="outline"
-              icon={{ name: "image", type: "feather", size: 18 }}
-              onPress={handlePickPhoto}
-              buttonStyle={{ borderColor: colors.primary }}
-              titleStyle={{ color: colors.primary }}
-            />
+          <View>
+            <Text style={styles.placeholderText}>
+              Aucune photo affichée pour cet entraînement.
+            </Text>
+            {!removePhoto && workout.photoURL && (
+              <Button
+                type="outline"
+                title="Recharger la photo originale"
+                onPress={handleResetPhoto}
+                containerStyle={{ marginTop: 12 }}
+                buttonStyle={{ borderColor: colors.primary }}
+                titleStyle={{ color: colors.primary }}
+              />
+            )}
+            <View style={styles.photoActions}>
+              <Button
+                title="Caméra"
+                icon={{ name: "camera", type: "feather", size: 18 }}
+                onPress={changePhotoFromCamera}
+                buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
+              />
+              <Button
+                title="Galerie"
+                type="outline"
+                icon={{ name: "image", type: "feather", size: 18 }}
+                onPress={changePhotoFromLibrary}
+                buttonStyle={{ borderColor: colors.primary }}
+                titleStyle={{ color: colors.primary }}
+              />
+            </View>
           </View>
         )}
       </Card>
@@ -258,14 +317,14 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
       <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Card.Title>Type d'entraînement</Card.Title>
         <ButtonGroup
-          buttons={workoutTypes.map((t) => t.label)}
+          buttons={typeOptions.map((t) => t.label)}
           selectedIndex={typeIndex}
           onPress={setTypeIndex}
           containerStyle={styles.buttonGroup}
           buttonContainerStyle={{ borderColor: colors.borderLight }}
-          textStyle={{ color: colors.text }}
           selectedButtonStyle={{ backgroundColor: colors.primary }}
           selectedTextStyle={{ color: "#fff" }}
+          textStyle={{ color: colors.text }}
         />
       </Card>
 
@@ -274,29 +333,22 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
         value={duration}
         onChangeText={setDuration}
         keyboardType="numeric"
-        placeholder="45"
         leftIcon={<Icon type="feather" name="clock" size={18} />}
       />
 
       {currentType === "running" && (
         <Input
-          label="Distance (km) *"
+          label="Distance (km)"
           value={distance}
           onChangeText={setDistance}
           keyboardType="decimal-pad"
-          placeholder="5.2"
           leftIcon={<Icon type="feather" name="navigation" size={18} />}
         />
       )}
 
       {currentType === "musculation" && (
         <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Card.Title>Séance de musculation</Card.Title>
-          {exercises.length === 0 && (
-            <Text style={styles.placeholderText}>
-              Ajoute tes exercices (nom + séries + reps)
-            </Text>
-          )}
+          <Card.Title>Séance musculation</Card.Title>
           {exercises.map((exercise, index) => (
             <ListItem key={`${exercise.name}-${index}`} bottomDivider>
               <ListItem.Content>
@@ -307,12 +359,12 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
               </ListItem.Content>
               <Button
                 type="clear"
-                icon={{ name: "trash-2", type: "feather", color: "#ff6961", size: 18 }}
+                icon={{ name: "trash-2", type: "feather", color: "#ff6961" }}
                 onPress={() => removeExercise(index)}
               />
             </ListItem>
           ))}
-          <Input placeholder="Nom de l'exercice" value={exerciseName} onChangeText={setExerciseName} />
+          <Input placeholder="Nom" value={exerciseName} onChangeText={setExerciseName} />
           <View style={styles.exerciseRow}>
             <Input
               placeholder="Séries"
@@ -322,18 +374,14 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
               containerStyle={styles.halfField}
             />
             <Input
-              placeholder="Répétitions"
+              placeholder="Reps"
               value={reps}
               onChangeText={setReps}
               keyboardType="numeric"
               containerStyle={styles.halfField}
             />
           </View>
-          <Button
-            title="+ Ajouter un exercice"
-            type="outline"
-            onPress={addExercise}
-          />
+          <Button title="+ Ajouter un exercice" type="outline" onPress={addExercise} />
         </Card>
       )}
 
@@ -341,22 +389,21 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
         label="Notes"
         value={notes}
         onChangeText={setNotes}
-        placeholder="Sensations, météo, chrono, etc."
         multiline
         numberOfLines={4}
       />
 
       <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Card.Title>Ressenti global : {feeling}/10</Card.Title>
+        <Card.Title>Ressenti : {feeling}/10</Card.Title>
         <Slider
           value={feeling}
           onValueChange={setFeeling}
-          step={1}
           minimumValue={1}
           maximumValue={10}
-          thumbStyle={styles.sliderThumb}
-          maximumTrackTintColor={colors.border}
+          step={1}
           minimumTrackTintColor={colors.primary}
+          maximumTrackTintColor={colors.border}
+          thumbTintColor={colors.primary}
         />
         <View style={styles.sliderLabels}>
           <Text>1</Text>
@@ -365,17 +412,12 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
       </Card>
 
       <Button
-        title="Publier l'entraînement"
+        title="Enregistrer les modifications"
         onPress={handleSubmit}
         loading={submitting}
         containerStyle={styles.submitButton}
         buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
-        titleStyle={{ fontWeight: "600", letterSpacing: 0.5 }}
-        icon={{
-          name: "send",
-          type: "feather",
-          color: "white",
-        }}
+        icon={{ name: "check", type: "feather", color: "white" }}
         iconRight
       />
     </ScrollView>
@@ -388,12 +430,21 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 32,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   card: {
     borderRadius: 16,
     borderWidth: 1,
     elevation: 0,
+  },
+  title: {
+    marginBottom: 16,
+    textAlign: "center",
   },
   photo: {
     width: "100%",
@@ -404,16 +455,15 @@ const styles = StyleSheet.create({
   photoActions: {
     flexDirection: "row",
     gap: 12,
-    justifyContent: "space-between",
     flexWrap: "wrap",
-  },
-  buttonGroup: {
-    marginTop: 12,
+    justifyContent: "space-between",
   },
   placeholderText: {
     textAlign: "center",
     color: "#888",
-    marginBottom: 12,
+  },
+  buttonGroup: {
+    marginTop: 12,
   },
   exerciseRow: {
     flexDirection: "row",
@@ -422,27 +472,16 @@ const styles = StyleSheet.create({
   halfField: {
     flex: 1,
   },
-  sliderThumb: {
-    width: 20,
-    height: 20,
-  },
   sliderLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 4,
   },
   submitButton: {
-    marginTop: 16,
+    marginTop: 12,
   },
   primaryButton: {
     borderRadius: 12,
     minHeight: 48,
-  },
-  screenTitle: {
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  screenSubtitle: {
-    marginBottom: 16,
   },
 });
