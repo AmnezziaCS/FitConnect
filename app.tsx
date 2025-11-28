@@ -29,6 +29,8 @@ import notificationService from "./src/services/notificationService";
 import { RootStackParamList } from "./src/types/index";
 import { FeedScreen } from "./src/screens/FeedScreen";
 import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
+import { WorkoutDetailScreen } from "./src/screens/WorkoutDetailScreen";
+import { EditWorkoutScreen } from "./src/screens/EditWorkoutScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -148,6 +150,18 @@ function AppNavigator() {
             name="AddWorkout"
             component={AddWorkoutScreen}
             options={{ title: "Nouvel entraînement" }}
+          />
+
+          <Stack.Screen
+            name="WorkoutDetail"
+            component={WorkoutDetailScreen}
+            options={{ title: "Détail de l'entraînement" }}
+          />
+
+          <Stack.Screen
+            name="EditWorkout"
+            component={EditWorkoutScreen}
+            options={{ title: "Modifier l'entraînement" }}
           />
 
           <Stack.Screen
