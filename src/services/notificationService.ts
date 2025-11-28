@@ -1,13 +1,14 @@
 import * as Notifications from "expo-notifications";
 import {
-  addDoc,
-  collection,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  updateDoc,
-  where,
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    updateDoc,
+    where,
 } from "firebase/firestore";
 import { Platform } from "react-native";
 import { db } from "../config/firebase";
@@ -66,6 +67,21 @@ class NotificationService {
   // Get the current push token
   getExpoPushToken(): string | null {
     return this.expoPushToken;
+  }
+
+  // Save Expo push token to user's Firestore document
+  async saveExpoPushTokenToUser(userId: string): Promise<void> {
+    try {
+      // Ensure we have permissions and a token
+      await this.requestPermissions();
+      if (!this.expoPushToken) return;
+
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, { expoPushToken: this.expoPushToken });
+    } catch (e) {
+      // ignore errors
+      console.warn("Could not save Expo push token:", e);
+    }
   }
 
   // Schedule workout reminder
@@ -183,19 +199,50 @@ class NotificationService {
     title: string,
     body: string
   ): Promise<void> {
-    // In a real app, you would:
-    // 1. Store user's Expo Push Token in Firestore when they log in
-    // 2. Retrieve the token here
-    // 3. Send to Expo's push notification service
-    // For now, we'll just send a local notification
+    try {
+      // Retrieve the user's Expo push token from Firestore
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+      const token = userSnap.exists() ? (userSnap.data() as any).expoPushToken : null;
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
+      if (!token) {
+        // Fall back to local notification if no remote token available
+        await Notifications.scheduleNotificationAsync({
+          content: { title, body },
+          trigger: null,
+        });
+        return;
+      }
+
+      // Send push via Expo Push API
+      const message = {
+        to: token,
+        sound: "default",
         title,
         body,
-      },
-      trigger: null, // immediate
-    });
+        data: {},
+      };
+
+      await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+      });
+    } catch (e) {
+      console.warn("Failed to send push notification:", e);
+      // Fallback: show local notification
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: { title, body },
+          trigger: null,
+        });
+      } catch (err) {
+        // ignore
+      }
+    }
   }
 
   // Get user notifications

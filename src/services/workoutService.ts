@@ -20,6 +20,7 @@ import {
 } from "firebase/storage";
 import { db, storage } from "../config/firebase";
 import { Comment, Exercise, Workout } from "../types";
+import notificationService from "./notificationService";
 
 class WorkoutService {
   // Create workout
@@ -129,7 +130,7 @@ class WorkoutService {
   }
 
   // Toggle like
-  async toggleLike(workoutId: string, userId: string): Promise<void> {
+  async toggleLike(workoutId: string, userId: string, userName?: string): Promise<void> {
     const workoutRef = doc(db, "workouts", workoutId);
     const workoutDoc = await getDoc(workoutRef);
 
@@ -145,6 +146,18 @@ class WorkoutService {
         await updateDoc(workoutRef, {
           likes: arrayUnion(userId),
         });
+        // Send notification to the workout owner (don't notify if user likes their own workout)
+        try {
+          if (workout.userId !== userId) {
+            await notificationService.sendLikeNotification(
+              workout.userId,
+              userName || "Quelqu'un",
+              workoutId
+            );
+          }
+        } catch (e) {
+          // ignore notification errors
+        }
       }
     }
   }
@@ -169,6 +182,23 @@ class WorkoutService {
     await updateDoc(workoutRef, {
       comments: arrayUnion({ ...comment, id: Date.now().toString() }),
     });
+    // Notify workout owner about the new comment (avoid notifying self)
+    try {
+      const workoutDoc = await getDoc(workoutRef);
+      if (workoutDoc.exists()) {
+        const workout = workoutDoc.data() as Workout;
+        if (workout.userId !== userId) {
+          await notificationService.sendCommentNotification(
+            workout.userId,
+            userName,
+            workoutId,
+            text
+          );
+        }
+      }
+    } catch (e) {
+      // ignore notification errors
+    }
   }
 
   // Delete comment

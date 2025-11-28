@@ -5,7 +5,7 @@ import { getStorage } from "firebase/storage";
 import { Platform } from "react-native";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCr7xl5DVJG3OGJpvx9wPT81NIBQ2FkZj4",
+  apiKey: "AIzaSyBJl3LYqBOrqo0qqo4sn6_4LLcxY0boBsk",
   authDomain: "fitconnect-ece95.firebaseapp.com",
   projectId: "fitconnect-ece95",
   storageBucket: "fitconnect-ece95.firebasestorage.app",

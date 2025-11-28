@@ -1,6 +1,7 @@
 import { User as FirebaseUser } from "firebase/auth";
 import { create } from "zustand";
 import { auth } from "../config/firebase";
+import notificationService from "../services/notificationService";
 import userService from "../services/userService";
 import { User } from "../types";
 
@@ -31,6 +32,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (firebaseUser) {
       const userData = await userService.getUserById(firebaseUser.uid);
       set({ user: userData, firebaseUser, loading: false });
+      // Request and save Expo push token for this user
+      try {
+        await notificationService.saveExpoPushTokenToUser(firebaseUser.uid);
+      } catch (e) {
+        // ignore
+      }
     } else {
       set({ user: null, firebaseUser: null, loading: false });
     }

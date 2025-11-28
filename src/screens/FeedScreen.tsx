@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { WorkoutCard } from "../components/WorkoutCard";
 import { useTheme } from "../contexts/ThemeContext";
@@ -22,14 +22,24 @@ export const FeedScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadWorkouts();
-  }, []);
+    // Retry loading when the auth `user` becomes available.
+    // If there's no user, stop the local loading spinner instead of hanging.
+    if (user) {
+      loadWorkouts();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const loadWorkouts = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      const data = await workoutService.getFeedWorkouts(user.id, user.friends);
+      const friends = Array.isArray(user.friends) ? user.friends : [];
+      const data = await workoutService.getFeedWorkouts(user.id, friends);
       setWorkouts(data);
     } catch (error) {
       console.error("Error loading workouts:", error);

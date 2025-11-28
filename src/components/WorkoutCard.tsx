@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import React, { useState } from "react";
@@ -11,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
+import notificationService from "../services/notificationService";
 import workoutService from "../services/workoutService";
 import { useAuthStore } from "../store/authStore";
 import { typography } from "../theme/typography";
@@ -28,18 +30,21 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
 }) => {
   const { colors } = useTheme();
   const user = useAuthStore((state) => state.user);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(workout.comments && workout.comments.length > 0);
   const [newComment, setNewComment] = useState("");
   const [isLiked, setIsLiked] = useState(
     user ? workout.likes.includes(user.id) : false
   );
+  const [likeCount, setLikeCount] = useState(workout.likes.length || 0);
 
   const handleLike = async () => {
     if (!user) return;
 
     try {
-      setIsLiked(!isLiked);
-      await workoutService.toggleLike(workout.id, user.id);
+      const newLiked = !isLiked;
+      setIsLiked(newLiked);
+      setLikeCount((c) => (newLiked ? c + 1 : Math.max(0, c - 1)));
+      await workoutService.toggleLike(workout.id, user.id, user.displayName || "Utilisateur");
       onUpdate?.();
     } catch (error) {
       Alert.alert("Erreur", "Impossible de liker");
@@ -78,9 +83,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <Image
-          source={{
-            uri: workout.userPhoto || "https://via.placeholder.com/40",
-          }}
+          source={{ uri: workout.userPhoto || "https://via.placeholder.com/40" }}
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
@@ -215,32 +218,27 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
       {/* Actions */}
       <View style={styles.actions}>
         <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
-          <Text style={styles.likeIcon}>{isLiked ? "❤️" : "🤍"}</Text>
-          <Text
-            style={[
-              styles.actionText,
-              { color: colors.text },
-              typography.small,
-            ]}
-          >
-            {workout.likes.length}
-          </Text>
+          <Ionicons name={isLiked ? "heart" : "heart-outline"} size={20} color={isLiked ? colors.primary : colors.text} />
+          <Text style={[styles.actionText, { color: colors.text }, typography.small]}>{likeCount}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowComments(!showComments)} style={styles.actionButton}>
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.text} />
+          <Text style={[styles.actionText, { color: colors.text }, typography.small]}>{workout.comments.length}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => setShowComments(!showComments)}
+          onPress={async () => {
+            try {
+              await notificationService.scheduleWorkoutReminder(new Date(workout.date));
+              Alert.alert("Rappel", "Rappel programmé pour la séance.");
+            } catch (e) {
+              Alert.alert("Erreur", "Impossible de programmer le rappel.");
+            }
+          }}
           style={styles.actionButton}
         >
-          <Text style={styles.commentIcon}>💬</Text>
-          <Text
-            style={[
-              styles.actionText,
-              { color: colors.text },
-              typography.small,
-            ]}
-          >
-            {workout.comments.length}
-          </Text>
+          <Ionicons name="notifications-outline" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -275,7 +273,28 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                   {comment.text}
                 </Text>
               </View>
-            </View>
+              {user && comment.userId === user.id && (
+                <TouchableOpacity
+                  onPress={async () => {
+                    try {
+                      await workoutService.deleteComment(workout.id, comment.id);
+                      onUpdate?.();
+                    } catch (e) {
+                      Alert.alert("Erreur", "Impossible de supprimer le commentaire");
+                    }
+                  }}
+                  style={{ marginLeft: 8 }}
+                >
+                  <Text style={{ color: colors.primary }}>Suppr</Text>
+                </TouchableOpacity>
+              )}
+            git status
+            git stash save "WIP before pull"    # only if there are uncommitted changes
+            git pull --rebase origin master
+            git stash pop                        # only if stash was created            git status
+            git stash save "WIP before pull"    # only if there are uncommitted changes
+            git pull --rebase origin master
+            git stash pop                        # only if stash was created            </View>
           ))}
 
           <View style={styles.addComment}>
