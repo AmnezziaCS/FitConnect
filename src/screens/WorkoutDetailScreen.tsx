@@ -225,7 +225,10 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Card.Title>Exercices</Card.Title>
             <Divider />
             {workout.exercises.map((exercise, index) => (
-              <ListItem key={index} bottomDivider>
+              <ListItem
+                key={`${exercise.name}-${index}`}
+                bottomDivider
+              >
                 <ListItem.Content>
                   <ListItem.Title>{exercise.name}</ListItem.Title>
                   <ListItem.Subtitle>

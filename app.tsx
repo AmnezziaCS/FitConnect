@@ -31,6 +31,8 @@ import notificationService from "./src/services/notificationService";
 import { RootStackParamList } from "./src/types/index";
 import { FeedScreen } from "./src/screens/FeedScreen";
 import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
+import { WorkoutDetailScreen } from "./src/screens/WorkoutDetailScreen";
+import { EditWorkoutScreen } from "./src/screens/EditWorkoutScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -153,20 +155,17 @@ function AppNavigator() {
           />
 
           <Stack.Screen
-            name="Notifications"
-            component={NotificationsScreen}
-            options={{ title: "Notifications" }}
+            name="WorkoutDetail"
+            component={WorkoutDetailScreen}
+            options={{ title: "Détail de l'entraînement" }}
           />
+
           <Stack.Screen
-            name="MyWorkouts"
-            component={MyWorkoutsScreen}
-            options={{ title: "Mes entraînements" }}
+            name="EditWorkout"
+            component={EditWorkoutScreen}
+            options={{ title: "Modifier l'entraînement" }}
           />
-          <Stack.Screen
-            name="EditProfile"
-            component={EditProfileScreen}
-            options={{ title: "Modifier le profil" }}
-          />
+
           <Stack.Screen
             name="Chat"
             component={ChatScreen}

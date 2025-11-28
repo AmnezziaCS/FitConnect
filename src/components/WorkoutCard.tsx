@@ -79,6 +79,7 @@ export const WorkoutCard: React.FC<Props> = ({
       ]}
     >
       <TouchableOpacity
+        key="card-content"
         activeOpacity={onPress ? 0.8 : 1}
         onPress={handleOpen}
       >
@@ -136,7 +137,7 @@ export const WorkoutCard: React.FC<Props> = ({
         )}
       </TouchableOpacity>
 
-      <View style={styles.actions}>
+      <View key="card-actions" style={styles.actions}>
         <Button
           type={hasLiked ? "solid" : "outline"}
           title={`${workout.likes.length} J'aime`}
@@ -172,6 +173,7 @@ export const WorkoutCard: React.FC<Props> = ({
 
       {showCommentBox && (
         <Input
+          key="card-comment-input"
           placeholder="Ajouter un commentaire..."
           value={comment}
           onChangeText={setComment}
@@ -185,6 +187,7 @@ export const WorkoutCard: React.FC<Props> = ({
           inputStyle={{ color: colors.text }}
           placeholderTextColor={colors.textTertiary}
           inputContainerStyle={{ borderBottomColor: colors.border }}
+          containerStyle={styles.commentInputContainer}
         />
       )}
     </Card>
@@ -228,5 +231,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     borderWidth: 1,
+  },
+  commentInputContainer: {
+    marginTop: 12,
   },
 });
