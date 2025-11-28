@@ -20,11 +20,8 @@ import { useAuthStore } from "./src/store/authStore";
 
 // Screens
 import * as SplashScreen from "expo-splash-screen";
-import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
 import { ChatScreen } from "./src/screens/ChatScreen";
 import { ConversationsScreen } from "./src/screens/ConversationsScreen";
-import { EditProfileScreen } from "./src/screens/EditProfileScreen";
-import { FeedScreen } from "./src/screens/FeedScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { MyWorkoutsScreen } from "./src/screens/MyWorkoutsScreen";
 import { NotificationsScreen } from "./src/screens/NotificationScreen";
@@ -32,6 +29,8 @@ import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SignupScreen } from "./src/screens/SignupScreen";
 import notificationService from "./src/services/notificationService";
 import { RootStackParamList } from "./src/types/index";
+import { FeedScreen } from "./src/screens/FeedScreen";
+import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -104,7 +103,6 @@ function AppNavigator() {
       if (user) {
         await loadUserData();
       }
-
       setLoading(false);
     });
 
@@ -147,11 +145,13 @@ function AppNavigator() {
             component={MainTabs}
             options={{ headerShown: false }}
           />
+
           <Stack.Screen
             name="AddWorkout"
             component={AddWorkoutScreen}
             options={{ title: "Nouvel entraînement" }}
           />
+
           <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}

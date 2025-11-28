@@ -1,304 +1,191 @@
+import React, { useMemo, useState } from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Card, Text, Avatar, Button, Input, Icon } from "@rneui/themed";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { useTheme } from "../contexts/ThemeContext";
+import { Workout } from "../types";
 import workoutService from "../services/workoutService";
 import { useAuthStore } from "../store/authStore";
-import { typography } from "../theme/typography";
-import { Workout } from "../types";
-import { Card } from "./ui/Card";
+import { useTheme } from "../contexts/ThemeContext";
 
-interface WorkoutCardProps {
+interface Props {
   workout: Workout;
-  onUpdate?: () => void;
+  onUpdate: () => void;
+  onPress?: (workoutId: string) => void;
+  showCommentBox?: boolean;
 }
 
-export const WorkoutCard: React.FC<WorkoutCardProps> = ({
+export const WorkoutCard: React.FC<Props> = ({
   workout,
   onUpdate,
+  onPress,
+  showCommentBox = true,
 }) => {
+  const user = useAuthStore((s) => s.user);
+  const [comment, setComment] = useState("");
   const { colors } = useTheme();
-  const user = useAuthStore((state) => state.user);
-  const [showComments, setShowComments] = useState(false);
-  const [newComment, setNewComment] = useState("");
-  const [isLiked, setIsLiked] = useState(
-    user ? workout.likes.includes(user.id) : false
-  );
 
-  const handleLike = async () => {
+  const formattedDate = useMemo(() => {
+    try {
+      return format(new Date(workout.date), "dd MMMM yyyy", { locale: fr });
+    } catch {
+      return "";
+    }
+  }, [workout.date]);
+
+  const toggleLike = async () => {
     if (!user) return;
+    await workoutService.toggleLike(workout.id, user.id);
+    onUpdate();
+  };
 
-    try {
-      setIsLiked(!isLiked);
-      await workoutService.toggleLike(workout.id, user.id);
-      onUpdate?.();
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de liker");
-      setIsLiked(!isLiked);
+  const submitComment = async () => {
+    if (!user || !comment.trim()) return;
+    await workoutService.addComment(
+      workout.id,
+      user.id,
+      user.displayName,
+      user.photoURL,
+      comment
+    );
+    setComment("");
+    onUpdate();
+  };
+
+  const handleOpen = () => {
+    if (onPress) {
+      onPress(workout.id);
     }
   };
 
-  const handleAddComment = async () => {
-    if (!user || !newComment.trim()) return;
-
-    try {
-      await workoutService.addComment(
-        workout.id,
-        user.id,
-        user.displayName,
-        user.photoURL,
-        newComment
-      );
-      setNewComment("");
-      onUpdate?.();
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de commenter");
+  const typeLabel = useMemo(() => {
+    switch (workout.type) {
+      case "musculation":
+        return "Musculation";
+      case "running":
+        return "Course";
+      default:
+        return "Autre";
     }
-  };
+  }, [workout.type]);
 
-  const getFeelingEmoji = (feeling: number) => {
-    if (feeling <= 3) return "😫";
-    if (feeling <= 5) return "😐";
-    if (feeling <= 7) return "🙂";
-    if (feeling <= 9) return "😊";
-    return "🔥";
-  };
+  const hasLiked = user ? workout.likes.includes(user.id) : false;
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Image
-          source={{
-            uri: workout.userPhoto || "https://via.placeholder.com/40",
-          }}
-          style={styles.avatar}
-        />
-        <View style={styles.userInfo}>
-          <Text
-            style={[
-              styles.userName,
-              { color: colors.text },
-              typography.bodyMedium,
-            ]}
-          >
-            {workout.userName}
-          </Text>
-          <Text
-            style={[
-              styles.date,
-              { color: colors.textTertiary },
-              typography.caption,
-            ]}
-          >
-            {format(new Date(workout.date), "dd MMMM yyyy", { locale: fr })}
-          </Text>
-        </View>
-      </View>
+    <Card
+      containerStyle={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+    >
+      <TouchableOpacity
+        activeOpacity={onPress ? 0.8 : 1}
+        onPress={handleOpen}
+      >
+        <View style={styles.header}>
+          <Avatar
+            rounded
+            source={{
+              uri: workout.userPhoto || "https://via.placeholder.com/60",
+            }}
+          />
 
-      {/* Image */}
-      <Image source={{ uri: workout.photoURL }} style={styles.image} />
-
-      {/* Details */}
-      <View style={styles.details}>
-        <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text
-              style={[
-                styles.statLabel,
-                { color: colors.textSecondary },
-                typography.caption,
-              ]}
-            >
-              Durée
+          <View style={{ marginLeft: 10, flex: 1 }}>
+            <Text style={[styles.name, { color: colors.text }]}>
+              {workout.userName}
             </Text>
-            <Text
-              style={[
-                styles.statValue,
-                { color: colors.text },
-                typography.bodySemibold,
-              ]}
-            >
-              {workout.duration} min
+            <Text style={[styles.date, { color: colors.textSecondary }]}>
+              {formattedDate}
             </Text>
           </View>
-
-          {workout.type === "running" && workout.distance && (
-            <View style={styles.stat}>
-              <Text
-                style={[
-                  styles.statLabel,
-                  { color: colors.textSecondary },
-                  typography.caption,
-                ]}
-              >
-                Distance
-              </Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: colors.text },
-                  typography.bodySemibold,
-                ]}
-              >
-                {workout.distance} km
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.stat}>
-            <Text
-              style={[
-                styles.statLabel,
-                { color: colors.textSecondary },
-                typography.caption,
-              ]}
-            >
-              Ressenti
-            </Text>
-            <Text
-              style={[
-                styles.statValue,
-                { color: colors.text },
-                typography.bodySemibold,
-              ]}
-            >
-              {getFeelingEmoji(workout.feeling)} {workout.feeling}/10
+          <View
+            style={[
+              styles.typeChip,
+              { backgroundColor: `${colors.primary}20` },
+            ]}
+          >
+            <Text style={[styles.typeChipText, { color: colors.primary }]}>
+              {typeLabel}
             </Text>
           </View>
         </View>
 
-        {workout.notes && (
-          <Text style={[styles.notes, { color: colors.text }, typography.body]}>
-            {workout.notes}
+        {workout.photoURL && (
+          <Image source={{ uri: workout.photoURL }} style={styles.photo} />
+        )}
+
+        <Text style={[styles.metric, { color: colors.text }]}>
+          ⏱️ {workout.duration} min · {typeLabel}
+        </Text>
+
+        {workout.distance && (
+          <Text style={[styles.metric, { color: colors.text }]}>
+            📏 {workout.distance} km
+          </Text>
+        )}
+        {workout.exercises && (
+          <Text style={[styles.metric, { color: colors.text }]}>
+            📝 {workout.exercises.length} exercices
           </Text>
         )}
 
-        {workout.type === "musculation" &&
-          workout.exercises &&
-          workout.exercises.length > 0 && (
-            <View style={styles.exercises}>
-              <Text
-                style={[
-                  styles.exercisesTitle,
-                  { color: colors.text },
-                  typography.bodyMedium,
-                ]}
-              >
-                Exercices:
-              </Text>
-              {workout.exercises.map((ex, index) => (
-                <Text
-                  key={index}
-                  style={[
-                    styles.exercise,
-                    { color: colors.textSecondary },
-                    typography.small,
-                  ]}
-                >
-                  • {ex.name}: {ex.sets} séries × {ex.reps} reps
-                </Text>
-              ))}
-            </View>
-          )}
-      </View>
+        {workout.notes && (
+          <Text style={[styles.notes, { color: colors.textSecondary }]}>
+            “{workout.notes}”
+          </Text>
+        )}
+      </TouchableOpacity>
 
-      {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
-          <Text style={styles.likeIcon}>{isLiked ? "❤️" : "🤍"}</Text>
-          <Text
-            style={[
-              styles.actionText,
-              { color: colors.text },
-              typography.small,
+        <Button
+          type={hasLiked ? "solid" : "outline"}
+          title={`${workout.likes.length} J'aime`}
+          onPress={toggleLike}
+          buttonStyle={[
+            styles.actionButton,
+            hasLiked && { backgroundColor: colors.primary, borderColor: colors.primary },
+          ]}
+          titleStyle={{ color: hasLiked ? "#fff" : colors.primary }}
+          icon={
+            <Icon
+              name="heart"
+              type="feather"
+              size={18}
+              color={hasLiked ? "#fff" : colors.primary}
+              style={{ marginRight: 6 }}
+            />
+          }
+        />
+        {onPress && (
+          <Button
+            type="outline"
+            title="Détails"
+            onPress={handleOpen}
+            buttonStyle={[
+              styles.actionButton,
+              { borderColor: colors.textSecondary },
             ]}
-          >
-            {workout.likes.length}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setShowComments(!showComments)}
-          style={styles.actionButton}
-        >
-          <Text style={styles.commentIcon}>💬</Text>
-          <Text
-            style={[
-              styles.actionText,
-              { color: colors.text },
-              typography.small,
-            ]}
-          >
-            {workout.comments.length}
-          </Text>
-        </TouchableOpacity>
+            titleStyle={{ color: colors.textSecondary }}
+          />
+        )}
       </View>
 
-      {/* Comments */}
-      {showComments && (
-        <View style={styles.commentsSection}>
-          {workout.comments.map((comment) => (
-            <View key={comment.id} style={styles.comment}>
-              <Image
-                source={{
-                  uri: comment.userPhoto || "https://via.placeholder.com/30",
-                }}
-                style={styles.commentAvatar}
-              />
-              <View style={styles.commentContent}>
-                <Text
-                  style={[
-                    styles.commentUser,
-                    { color: colors.text },
-                    typography.smallMedium,
-                  ]}
-                >
-                  {comment.userName}
-                </Text>
-                <Text
-                  style={[
-                    styles.commentText,
-                    { color: colors.text },
-                    typography.small,
-                  ]}
-                >
-                  {comment.text}
-                </Text>
-              </View>
-            </View>
-          ))}
-
-          <View style={styles.addComment}>
-            <TextInput
-              style={[
-                styles.commentInput,
-                { backgroundColor: colors.surface, color: colors.text },
-                typography.small,
-              ]}
-              placeholder="Ajouter un commentaire..."
-              placeholderTextColor={colors.textTertiary}
-              value={newComment}
-              onChangeText={setNewComment}
-              multiline
-            />
-            <TouchableOpacity
-              onPress={handleAddComment}
-              style={styles.sendButton}
-            >
-              <Text style={styles.sendIcon}>➤</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {showCommentBox && (
+        <Input
+          placeholder="Ajouter un commentaire..."
+          value={comment}
+          onChangeText={setComment}
+          multiline
+          rightIcon={{
+            name: "send",
+            type: "feather",
+            onPress: submitComment,
+            color: colors.primary,
+          }}
+          inputStyle={{ color: colors.text }}
+          placeholderTextColor={colors.textTertiary}
+          inputContainerStyle={{ borderBottomColor: colors.border }}
+        />
       )}
     </Card>
   );
@@ -306,117 +193,40 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
+    borderRadius: 18,
     marginBottom: 16,
-    padding: 0,
+    borderWidth: 1,
+    elevation: 0,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  userInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  userName: {},
-  date: {},
-  image: {
+  header: { flexDirection: "row", alignItems: "center" },
+  name: { fontWeight: "600", fontSize: 16 },
+  date: { fontSize: 13 },
+  photo: {
     width: "100%",
-    height: 300,
-  },
-  details: {
-    padding: 12,
-  },
-  stats: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    height: 200,
+    borderRadius: 12,
+    marginTop: 12,
     marginBottom: 12,
   },
-  stat: {
-    alignItems: "center",
-  },
-  statLabel: {},
-  statValue: {},
-  notes: {
-    marginTop: 8,
-  },
-  exercises: {
-    marginTop: 12,
-  },
-  exercisesTitle: {
-    marginBottom: 4,
-  },
-  exercise: {
-    marginLeft: 8,
-  },
+  metric: { marginTop: 4, fontWeight: "500" },
+  notes: { marginTop: 10, fontStyle: "italic" },
   actions: {
     flexDirection: "row",
+    marginTop: 10,
+    justifyContent: "space-between",
+  },
+  typeChip: {
     paddingHorizontal: 12,
-    paddingBottom: 12,
-    gap: 16,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  typeChipText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
   actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  likeIcon: {
-    fontSize: 20,
-  },
-  commentIcon: {
-    fontSize: 20,
-  },
-  actionText: {},
-  commentsSection: {
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingTop: 12,
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-  comment: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-  commentAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-  },
-  commentContent: {
-    marginLeft: 8,
-    flex: 1,
-  },
-  commentUser: {
-    marginBottom: 2,
-  },
-  commentText: {},
-  addComment: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 8,
-  },
-  commentInput: {
-    flex: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    minHeight: 36,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendIcon: {
-    fontSize: 20,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
   },
 });
