@@ -24,12 +24,14 @@ import { AddWorkoutScreen } from "./src/screens/AddWorkoutScreen";
 import { ChatScreen } from "./src/screens/ChatScreen";
 import { ConversationsScreen } from "./src/screens/ConversationsScreen";
 import { EditProfileScreen } from "./src/screens/EditProfileScreen";
+import { EditWorkoutScreen } from "./src/screens/EditWorkoutScreen";
 import { FeedScreen } from "./src/screens/FeedScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { MyWorkoutsScreen } from "./src/screens/MyWorkoutsScreen";
 import { NotificationsScreen } from "./src/screens/NotificationScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SignupScreen } from "./src/screens/SignupScreen";
+import { WorkoutDetailScreen } from "./src/screens/WorkoutDetailScreen";
 import notificationService from "./src/services/notificationService";
 import { RootStackParamList } from "./src/types/index";
 
@@ -158,16 +160,31 @@ function AppNavigator() {
             component={NotificationsScreen}
             options={{ title: "Notifications" }}
           />
+
           <Stack.Screen
             name="MyWorkouts"
             component={MyWorkoutsScreen}
             options={{ title: "Mes entraînements" }}
           />
+
           <Stack.Screen
             name="EditProfile"
             component={EditProfileScreen}
             options={{ title: "Modifier le profil" }}
           />
+
+          <Stack.Screen
+            name="WorkoutDetail"
+            component={WorkoutDetailScreen}
+            options={{ title: "Détail de l'entraînement" }}
+          />
+
+          <Stack.Screen
+            name="EditWorkout"
+            component={EditWorkoutScreen}
+            options={{ title: "Modifier l'entraînement" }}
+          />
+
           <Stack.Screen
             name="Chat"
             component={ChatScreen}

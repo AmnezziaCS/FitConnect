@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { getAuth, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { Platform } from "react-native";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJl3LYqBOrqo0qqo4sn6_4LLcxY0boBsk",
@@ -11,7 +10,7 @@ const firebaseConfig = {
   storageBucket: "fitconnect-ece95.firebasestorage.app",
   messagingSenderId: "802646631140",
   appId: "1:802646631140:web:d24ac4bec6db88e77442f1",
-  measurementId: "G-RRYV5QVV58"
+  measurementId: "G-RRYV5QVV58",
 };
 
 const app = initializeApp(firebaseConfig);

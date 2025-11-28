@@ -49,7 +49,13 @@ export const FeedScreen: React.FC = () => {
         data={workouts}
         keyExtractor={(i) => i.id}
         renderItem={({ item }) => (
-          <WorkoutCard workout={item} onUpdate={load} />
+          <WorkoutCard
+            workout={item}
+            onUpdate={load}
+            onPress={(workoutId) =>
+              navigation.navigate("WorkoutDetail", { workoutId })
+            }
+          />
         )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={load} />
