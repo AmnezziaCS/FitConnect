@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createNativeStackNavigator as createStackNavigator } from "@react-navigation/native-stack";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect } from "react";
 import { auth } from "./src/config/firebase";
@@ -32,10 +32,10 @@ import { NotificationsScreen } from "./src/screens/NotificationScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SignupScreen } from "./src/screens/SignupScreen";
 import { WorkoutDetailScreen } from "./src/screens/WorkoutDetailScreen";
-import notificationService from "./src/services/notificationService";
+import reminderService from "./src/services/reminderService";
 import { RootStackParamList } from "./src/types/index";
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 SplashScreen.preventAutoHideAsync();
@@ -156,12 +156,6 @@ function AppNavigator() {
           />
 
           <Stack.Screen
-            name="Notifications"
-            component={NotificationsScreen}
-            options={{ title: "Notifications" }}
-          />
-
-          <Stack.Screen
             name="WorkoutDetail"
             component={WorkoutDetailScreen}
             options={{ title: "Détail de l'entraînement" }}
@@ -183,6 +177,12 @@ function AppNavigator() {
             name="EditProfile"
             component={EditProfileScreen}
             options={{ title: "Modifier le profil" }}
+          />
+
+          <Stack.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ title: "Notifications" }}
           />
 
           <Stack.Screen
@@ -213,12 +213,13 @@ export default function App() {
     }
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    reminderService.initialize();
+  }, []);
+
   if (!fontsLoaded) {
     return null;
   }
-
-  notificationService.requestPermissions();
-  notificationService.setupNotificationListeners();
 
   return (
     <ThemeProvider>

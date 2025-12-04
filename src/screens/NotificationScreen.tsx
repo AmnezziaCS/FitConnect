@@ -1,321 +1,233 @@
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
-  FlatList,
-  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card } from "../components/ui/Card";
 import { useTheme } from "../contexts/ThemeContext";
-import notificationService from "../services/notificationService";
-import { useAuthStore } from "../store/authStore";
+import reminderService from "../services/reminderService";
 import { typography } from "../theme/typography";
-import { Notification as NotificationType } from "../types";
 
-export const NotificationsScreen: React.FC<{ navigation: any }> = ({
-  navigation,
-}) => {
+export const NotificationsScreen: React.FC<{ navigation: any }> = () => {
   const { colors } = useTheme();
-  const user = useAuthStore((state) => state.user);
-  const [notifications, setNotifications] = useState<NotificationType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [hour, setHour] = useState("18");
+  const [minute, setMinute] = useState("30");
+  const [reminders, setReminders] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadNotifications();
-  }, []);
-
-  const loadNotifications = async () => {
-    if (!user) return;
-
+  const handleScheduleReminder = async () => {
     try {
-      const data = await notificationService.getUserNotifications(user.id);
-      setNotifications(data);
+      const h = parseInt(hour, 10);
+      const m = parseInt(minute, 10);
+
+      if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+        Alert.alert("Erreur", "Heure et minutes invalides (0-23 et 0-59)");
+        return;
+      }
+
+      const id = await reminderService.scheduleReminder(h, m, true);
+      setReminders([...reminders, id]);
+      Alert.alert(
+        "Succès",
+        `Rappel programmé pour ${h.toString().padStart(2, "0")}:${m
+          .toString()
+          .padStart(2, "0")} tous les jours`
+      );
+      setHour("18");
+      setMinute("30");
     } catch (error) {
-      console.error("Error loading notifications:", error);
-      Alert.alert("Erreur", "Impossible de charger les notifications");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      Alert.alert("Erreur", "Impossible de programmer le rappel");
+      console.error(error);
     }
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadNotifications();
-  };
-
-  const handleNotificationPress = async (notification: NotificationType) => {
-    // Mark as read
-    if (!notification.read) {
-      try {
-        await notificationService.markAsRead(notification.id);
-        loadNotifications();
-      } catch (error) {
-        console.error("Error marking notification as read:", error);
-      }
-    }
-
-    // Navigate based on notification type
-    if (notification.type === "like" || notification.type === "comment") {
-      navigation.navigate("Main", { screen: "Feed" });
-    } else if (notification.type === "message") {
-      if (notification.data?.conversationId) {
-        navigation.navigate("Chat", {
-          conversationId: notification.data.conversationId,
-        });
-      } else {
-        navigation.navigate("Main", { screen: "Messages" });
-      }
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    if (!user) return;
-
+  const handleCancelAll = async () => {
     try {
-      await notificationService.markAllAsRead(user.id);
-      loadNotifications();
+      await reminderService.cancelAllReminders();
+      setReminders([]);
+      Alert.alert("Succès", "Tous les rappels ont été annulés");
     } catch (error) {
-      Alert.alert("Erreur", "Impossible de marquer comme lues");
+      Alert.alert("Erreur", "Impossible d'annuler les rappels");
+      console.error(error);
     }
   };
 
-  const getNotificationIcon = (type: NotificationType["type"]) => {
-    switch (type) {
-      case "like":
-        return "❤️";
-      case "comment":
-        return "💬";
-      case "message":
-        return "📨";
-      case "workout_reminder":
-        return "💪";
-      default:
-        return "🔔";
-    }
-  };
-
-  const renderNotification = ({ item }: { item: NotificationType }) => {
-    const timeAgo = format(new Date(item.createdAt), "dd MMM à HH:mm", {
-      locale: fr,
-    });
-
-    return (
-      <Card onPress={() => handleNotificationPress(item)}>
-        <View style={styles.notificationContent}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.icon}>{getNotificationIcon(item.type)}</Text>
-          </View>
-          <View style={styles.textContainer}>
-            <Text
-              style={[
-                styles.title,
-                { color: colors.text },
-                typography.bodyMedium,
-                !item.read && { fontWeight: "bold" },
-              ]}
-            >
-              {item.title}
-            </Text>
-            <Text
-              style={[
-                styles.body,
-                { color: colors.textSecondary },
-                typography.small,
-              ]}
-              numberOfLines={2}
-            >
-              {item.body}
-            </Text>
-            <Text
-              style={[
-                styles.time,
-                { color: colors.textTertiary },
-                typography.caption,
-              ]}
-            >
-              {timeAgo}
-            </Text>
-          </View>
-          {!item.read && (
-            <View
-              style={[styles.unreadBadge, { backgroundColor: colors.primary }]}
-            />
-          )}
-        </View>
-      </Card>
-    );
-  };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          styles.centered,
-          { backgroundColor: colors.background },
-        ]}
-      >
+  return (
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.section}>
+        <Text style={[styles.title, { color: colors.text }, typography.h2]}>
+          Rappel d&apos;entraînement
+        </Text>
         <Text
           style={[
-            styles.loadingText,
+            styles.subtitle,
             { color: colors.textSecondary },
             typography.body,
           ]}
         >
-          Chargement...
+          Reçois une alerte chaque jour à l&apos;heure de ton choix
         </Text>
       </View>
-    );
-  }
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      {notifications.length > 0 && unreadCount > 0 && (
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.card, borderBottomColor: colors.border },
-          ]}
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[{ color: colors.text }, typography.bodyMedium]}>
+          Heure du rappel
+        </Text>
+
+        <View style={styles.timeInputs}>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              Heure
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              placeholder="18"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={hour}
+              onChangeText={setHour}
+            />
+          </View>
+
+          <Text style={[styles.separator, { color: colors.text }]}>:</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              Minutes
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              placeholder="30"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={minute}
+              onChangeText={setMinute}
+            />
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={handleScheduleReminder}
+          style={[styles.button, { backgroundColor: colors.primary }]}
         >
-          <Text
-            style={[styles.headerText, { color: colors.text }, typography.body]}
-          >
-            {unreadCount} notification{unreadCount > 1 ? "s" : ""} non lue
-            {unreadCount > 1 ? "s" : ""}
+          <Text style={[styles.buttonText, typography.bodyMedium]}>
+            Programmer le rappel
           </Text>
-          <TouchableOpacity onPress={handleMarkAllAsRead}>
+        </TouchableOpacity>
+
+        {reminders.length > 0 && (
+          <>
             <Text
               style={[
-                styles.markAllText,
-                { color: colors.primary },
-                typography.smallMedium,
+                styles.remindersLabel,
+                { color: colors.textSecondary },
+                typography.small,
               ]}
             >
-              Tout marquer comme lu
+              {reminders.length} rappel{reminders.length > 1 ? "s" : ""} actif
+              {reminders.length > 1 ? "s" : ""}
             </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            <TouchableOpacity
+              onPress={handleCancelAll}
+              style={[styles.cancelButton, { backgroundColor: colors.border }]}
+            >
+              <Text style={[{ color: colors.text }, typography.bodyMedium]}>
+                Annuler tous les rappels
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
 
-      {/* Notifications List */}
-      {notifications.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🔔</Text>
-          <Text
-            style={[
-              styles.emptyText,
-              { color: colors.textSecondary },
-              typography.body,
-            ]}
-          >
-            Aucune notification
-          </Text>
-          <Text
-            style={[
-              styles.emptySubtext,
-              { color: colors.textTertiary },
-              typography.small,
-            ]}
-          >
-            Vous serez notifié des likes, commentaires et messages
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={notifications}
-          keyExtractor={(item) => item.id}
-          renderItem={renderNotification}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-            />
-          }
-        />
-      )}
-    </View>
+      <View
+        style={[
+          styles.infoBox,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[{ color: colors.text }, typography.small]}>
+          💡 Les rappels sont sauvegardés localement sur ton téléphone et
+          continueront à fonctionner même si l&apos;app est fermée.
+        </Text>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {},
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerText: {},
-  markAllText: {},
-  list: {
+  container: { flex: 1 },
+  content: { padding: 16, paddingBottom: 32 },
+  section: { marginBottom: 24 },
+  title: { marginBottom: 8 },
+  subtitle: { marginBottom: 4 },
+  card: {
+    borderRadius: 12,
+    borderWidth: 1,
     padding: 16,
-  },
-  notificationCard: {
-    marginBottom: 12,
-  },
-  notificationContent: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  iconContainer: {
-    marginRight: 12,
-  },
-  icon: {
-    fontSize: 28,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    marginBottom: 4,
-  },
-  body: {
-    marginBottom: 4,
-  },
-  time: {},
-  unreadBadge: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginLeft: 8,
-    marginTop: 4,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    fontSize: 64,
     marginBottom: 16,
   },
-  emptyText: {
-    textAlign: "center",
-    marginBottom: 8,
+  timeInputs: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginVertical: 16,
+    gap: 8,
   },
-  emptySubtext: {
+  inputGroup: { flex: 1 },
+  label: { marginBottom: 4, fontSize: 12 },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
     textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  separator: { fontSize: 20, marginBottom: 8, marginHorizontal: 4 },
+  button: {
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  buttonText: { color: "white", fontWeight: "600" },
+  remindersLabel: { marginTop: 12, textAlign: "center" },
+  cancelButton: {
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 12,
+    borderWidth: 1,
+  },
+  infoBox: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
   },
 });

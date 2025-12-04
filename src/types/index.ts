@@ -98,6 +98,7 @@ export type RootStackParamList = {
     otherUserName: string;
   };
   Conversations: undefined;
+  Notifications: undefined;
 };
 
 export type ChatScreenProps = NativeStackScreenProps<
