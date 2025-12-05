@@ -7,7 +7,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   updateDoc,
   where,
@@ -112,11 +111,11 @@ class WorkoutService {
   async getUserWorkouts(userId: string): Promise<Workout[]> {
     const q = query(
       collection(db, WORKOUTS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("date", "desc")
+      where("userId", "==", userId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => mapWorkout(d.id, d.data()));
+    const workouts = snapshot.docs.map((d) => mapWorkout(d.id, d.data()));
+    return workouts.sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
   async getFeedWorkouts(userId: string, friends: string[]): Promise<Workout[]> {
