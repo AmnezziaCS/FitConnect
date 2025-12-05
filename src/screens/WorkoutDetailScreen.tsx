@@ -162,8 +162,10 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             }}
           />
           <View style={styles.userInfo}>
-            <Text h4>{workout.userName}</Text>
-            <Text style={styles.dateText}>
+            <Text style={styles.notesLabel} h4>
+              {workout.userName}
+            </Text>
+            <Text style={styles.notesLabel}>
               {format(new Date(workout.date), "dd MMMM yyyy", { locale: fr })}
             </Text>
           </View>
@@ -192,7 +194,7 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Card.Title>Informations</Card.Title>
+        <Card.Title style={styles.notesLabel}>Informations</Card.Title>
         <Divider />
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Type :</Text>
@@ -227,7 +229,7 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             { backgroundColor: colors.card, borderColor: colors.border },
           ]}
         >
-          <Card.Title>Distance parcourue</Card.Title>
+          <Card.Title style={styles.notesLabel}>Distance parcourue</Card.Title>
           <Divider />
           <View style={styles.distanceContainer}>
             <Text h2 style={styles.distanceValue}>
@@ -303,7 +305,9 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Card.Title>Commentaires ({workout.comments.length})</Card.Title>
+        <Card.Title style={styles.notesLabel}>
+          Commentaires ({workout.comments.length})
+        </Card.Title>
         <Divider />
         <View style={styles.addCommentContainer}>
           <TextInput
@@ -436,11 +440,11 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666",
+    color: "white",
   },
   infoValue: {
     fontSize: 16,
-    color: "#333",
+    color: "white",
   },
   divider: {
     marginVertical: 12,
@@ -451,12 +455,12 @@ const styles = StyleSheet.create({
   notesLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666",
+    color: "white",
     marginBottom: 8,
   },
   notesText: {
     fontSize: 15,
-    color: "#333",
+    color: "white",
     lineHeight: 22,
   },
   distanceContainer: {
