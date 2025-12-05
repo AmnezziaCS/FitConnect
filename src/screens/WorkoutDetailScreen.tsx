@@ -11,10 +11,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 import workoutService from "../services/workoutService";
 import { useAuthStore } from "../store/authStore";
 import { RootStackParamList, Workout } from "../types";
-import { useTheme } from "../contexts/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutDetail">;
 
@@ -121,7 +121,9 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.centerContainer, { backgroundColor: colors.background }]}
+      >
         <Text style={{ color: colors.text }}>Chargement...</Text>
       </View>
     );
@@ -129,7 +131,9 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (!workout) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.centerContainer, { backgroundColor: colors.background }]}
+      >
         <Text h4 style={{ color: colors.text }}>
           Entraînement introuvable
         </Text>
@@ -143,7 +147,12 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={{ paddingBottom: 32 }}
     >
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <View style={styles.userHeader}>
           <Avatar
             size={50}
@@ -177,7 +186,12 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
       </Card>
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <Card.Title>Informations</Card.Title>
         <Divider />
         <View style={styles.infoRow}>
@@ -207,7 +221,12 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       </Card>
 
       {workout.type === "running" && workout.distance && (
-        <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Card
+          containerStyle={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Card.Title>Distance parcourue</Card.Title>
           <Divider />
           <View style={styles.distanceContainer}>
@@ -221,14 +240,16 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       {workout.type === "musculation" &&
         workout.exercises &&
         workout.exercises.length > 0 && (
-          <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Card
+            containerStyle={[
+              styles.card,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Card.Title>Exercices</Card.Title>
             <Divider />
             {workout.exercises.map((exercise, index) => (
-              <ListItem
-                key={`${exercise.name}-${index}`}
-                bottomDivider
-              >
+              <ListItem key={`${exercise.name}-${index}`} bottomDivider>
                 <ListItem.Content>
                   <ListItem.Title>{exercise.name}</ListItem.Title>
                   <ListItem.Subtitle>
@@ -240,7 +261,12 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </Card>
         )}
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <View style={styles.actionsRow}>
           <Button
             type={isLiked ? "solid" : "outline"}
@@ -271,7 +297,12 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
       </Card>
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <Card.Title>Commentaires ({workout.comments.length})</Card.Title>
         <Divider />
         <View style={styles.addCommentContainer}>
@@ -335,7 +366,12 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       </Card>
 
       {user && workout.userId === user.id && (
-        <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Card
+          containerStyle={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Button
             title="Supprimer l'entraînement"
             onPress={handleDelete}
@@ -361,14 +397,23 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
   card: {
     borderRadius: 18,
     borderWidth: 1,
     marginHorizontal: 16,
   },
+  coverPhoto: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  ownerActions: {
     justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
   },
   userHeader: {
     flexDirection: "row",

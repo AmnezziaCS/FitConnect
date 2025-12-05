@@ -1,12 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Image,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   Button,
   ButtonGroup,
@@ -17,13 +10,20 @@ import {
   Slider,
   Text,
 } from "@rneui/themed";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import workoutService from "../services/workoutService";
-import { Exercise, RootStackParamList, Workout } from "../types";
-import { useAuthStore } from "../store/authStore";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
+import workoutService from "../services/workoutService";
+import { useAuthStore } from "../store/authStore";
+import { Exercise, RootStackParamList, Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "EditWorkout">;
 
@@ -94,7 +94,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const askPermission = async (status: ImagePicker.PermissionStatus) => {
     if (status !== ImagePicker.PermissionStatus.GRANTED) {
-      Alert.alert("Autorisation requise", "Active l'accès caméra/galerie pour changer la photo.");
+      Alert.alert(
+        "Autorisation requise",
+        "Active l'accès caméra/galerie pour changer la photo."
+      );
       return false;
     }
     return true;
@@ -135,7 +138,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const addExercise = () => {
     if (!exerciseName || !sets || !reps) {
-      return Alert.alert("Champs manquants", "Complète l'exercice avant de l'ajouter.");
+      return Alert.alert(
+        "Champs manquants",
+        "Complète l'exercice avant de l'ajouter."
+      );
     }
     setExercises((prev) => [
       ...prev,
@@ -152,7 +158,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const validate = () => {
     if (!user) {
-      Alert.alert("Connexion requise", "Reconnecte-toi pour modifier ton entraînement.");
+      Alert.alert(
+        "Connexion requise",
+        "Reconnecte-toi pour modifier ton entraînement."
+      );
       return false;
     }
 
@@ -199,7 +208,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
-      Alert.alert("Erreur", error?.message || "Impossible de sauvegarder les modifications.");
+      Alert.alert(
+        "Erreur",
+        error?.message || "Impossible de sauvegarder les modifications."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -217,7 +229,8 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
     return null;
   }
 
-  const photoPreview = photoReplacement || (removePhoto ? null : workout.photoURL);
+  const photoPreview =
+    photoReplacement || (removePhoto ? null : workout.photoURL);
 
   return (
     <ScrollView
@@ -225,10 +238,15 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
       contentContainerStyle={styles.content}
     >
       <Text h3 style={[styles.title, { color: colors.text }]}>
-        Modifier l'entraînement
+        Modifier l&apos;entraînement
       </Text>
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <Card.Title>Date</Card.Title>
         <Button
           title={date.toLocaleDateString("fr-FR")}
@@ -250,7 +268,12 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
       </Card>
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <Card.Title>Photo (facultatif)</Card.Title>
         {photoPreview ? (
           <>
@@ -260,7 +283,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
                 title="Caméra"
                 icon={{ name: "camera", type: "feather", size: 18 }}
                 onPress={changePhotoFromCamera}
-                buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
+                buttonStyle={[
+                  styles.primaryButton,
+                  { backgroundColor: colors.primary },
+                ]}
               />
               <Button
                 title="Galerie"
@@ -299,7 +325,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
                 title="Caméra"
                 icon={{ name: "camera", type: "feather", size: 18 }}
                 onPress={changePhotoFromCamera}
-                buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
+                buttonStyle={[
+                  styles.primaryButton,
+                  { backgroundColor: colors.primary },
+                ]}
               />
               <Button
                 title="Galerie"
@@ -314,8 +343,13 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
       </Card>
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Card.Title>Type d'entraînement</Card.Title>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <Card.Title>Type d&apos;entraînement</Card.Title>
         <ButtonGroup
           buttons={typeOptions.map((t) => t.label)}
           selectedIndex={typeIndex}
@@ -347,7 +381,12 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
       )}
 
       {currentType === "musculation" && (
-        <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Card
+          containerStyle={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Card.Title>Séance musculation</Card.Title>
           {exercises.map((exercise, index) => (
             <ListItem key={`${exercise.name}-${index}`} bottomDivider>
@@ -364,7 +403,11 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
               />
             </ListItem>
           ))}
-          <Input placeholder="Nom" value={exerciseName} onChangeText={setExerciseName} />
+          <Input
+            placeholder="Nom"
+            value={exerciseName}
+            onChangeText={setExerciseName}
+          />
           <View style={styles.exerciseRow}>
             <Input
               placeholder="Séries"
@@ -381,7 +424,11 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
               containerStyle={styles.halfField}
             />
           </View>
-          <Button title="+ Ajouter un exercice" type="outline" onPress={addExercise} />
+          <Button
+            title="+ Ajouter un exercice"
+            type="outline"
+            onPress={addExercise}
+          />
         </Card>
       )}
 
@@ -393,7 +440,12 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
         numberOfLines={4}
       />
 
-      <Card containerStyle={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Card
+        containerStyle={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <Card.Title>Ressenti : {feeling}/10</Card.Title>
         <Slider
           value={feeling}
@@ -416,7 +468,10 @@ export const EditWorkoutScreen: React.FC<Props> = ({ route, navigation }) => {
         onPress={handleSubmit}
         loading={submitting}
         containerStyle={styles.submitButton}
-        buttonStyle={[styles.primaryButton, { backgroundColor: colors.primary }]}
+        buttonStyle={[
+          styles.primaryButton,
+          { backgroundColor: colors.primary },
+        ]}
         icon={{ name: "check", type: "feather", color: "white" }}
         iconRight
       />
