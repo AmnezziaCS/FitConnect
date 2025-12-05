@@ -162,18 +162,6 @@ function AppNavigator() {
           />
 
           <Stack.Screen
-            name="MyWorkouts"
-            component={MyWorkoutsScreen}
-            options={{ title: "Mes entraînements" }}
-          />
-
-          <Stack.Screen
-            name="EditProfile"
-            component={EditProfileScreen}
-            options={{ title: "Modifier le profil" }}
-          />
-
-          <Stack.Screen
             name="WorkoutDetail"
             component={WorkoutDetailScreen}
             options={{ title: "Détail de l'entraînement" }}
@@ -183,6 +171,18 @@ function AppNavigator() {
             name="EditWorkout"
             component={EditWorkoutScreen}
             options={{ title: "Modifier l'entraînement" }}
+          />
+
+          <Stack.Screen
+            name="MyWorkouts"
+            component={MyWorkoutsScreen}
+            options={{ title: "Mes entraînements" }}
+          />
+
+          <Stack.Screen
+            name="EditProfile"
+            component={EditProfileScreen}
+            options={{ title: "Modifier le profil" }}
           />
 
           <Stack.Screen

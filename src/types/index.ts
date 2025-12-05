@@ -87,11 +87,11 @@ export type RootStackParamList = {
   Signup: undefined;
   Main: undefined;
   AddWorkout: undefined;
-  EditProfile: undefined;
   Notifications: undefined;
   WorkoutDetail: { workoutId: string };
   EditWorkout: { workoutId: string };
   MyWorkouts: undefined;
+  EditProfile: undefined;
   Chat: {
     conversationId: string;
     otherUserId: string;
