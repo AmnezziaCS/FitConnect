@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
 import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -14,6 +14,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { usePedometer } from "../hooks/usePedometer";
 import authService from "../services/authService";
 import userService from "../services/userService";
+// messageService and userService removed; conversation start moved to Conversations screen
 import { useAuthStore } from "../store/authStore";
 import { typography } from "../theme/typography";
 
@@ -22,6 +23,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({
 }) => {
   const { colors, themeMode, setThemeMode } = useTheme();
   const user = useAuthStore((state) => state.user);
+  const firebaseUser = useAuthStore((state) => state.firebaseUser);
   const signOut = useAuthStore((state) => state.signOut);
   const { totalSteps, isPedometerAvailable } = usePedometer();
 
@@ -87,6 +89,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({
     navigation.navigate("EditProfile");
   };
 
+
   if (!user) {
     return (
       <View
@@ -100,7 +103,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({
         ]}
       >
         <Text style={{ color: colors.text, ...typography.body }}>
-          Chargement du profil...
+          {firebaseUser?.email ? `Chargement du profil (${firebaseUser.email})...` : "Chargement du profil..."}
         </Text>
         <Button title="Déconnexion" onPress={handleSignOut} />
       </View>
@@ -259,6 +262,8 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({
             fullWidth
             style={styles.actionButton}
           />
+
+          {/* Conversation start moved to Messages/Conversations screen */}
         </Card>
 
         <Button
@@ -284,6 +289,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({
           </Text>
         </TouchableOpacity>
       </View>
+      {/* Conversation start moved to Conversations screen */}
     </ScrollView>
   );
 };
@@ -369,4 +375,33 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   deleteButtonText: {},
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    padding: 20,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  input: {
+    width: "100%",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
 });
