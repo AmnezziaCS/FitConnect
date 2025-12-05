@@ -7,7 +7,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   updateDoc,
   where,
@@ -112,11 +111,11 @@ class WorkoutService {
   async getUserWorkouts(userId: string): Promise<Workout[]> {
     const q = query(
       collection(db, WORKOUTS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("date", "desc")
+      where("userId", "==", userId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => mapWorkout(d.id, d.data()));
+    const workouts = snapshot.docs.map((d) => mapWorkout(d.id, d.data()));
+    return workouts.sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
   async getFeedWorkouts(userId: string, friends: string[]): Promise<Workout[]> {
@@ -195,7 +194,7 @@ class WorkoutService {
     await deleteDoc(refDoc);
   }
 
-  async toggleLike(workoutId: string, userId: string) {
+  async toggleLike(workoutId: string, userId: string, userName?: string) {
     const refDoc = doc(db, WORKOUTS_COLLECTION, workoutId);
     const snap = await getDoc(refDoc);
     if (!snap.exists()) return;
@@ -230,6 +229,33 @@ class WorkoutService {
         comments: arrayUnion(comment),
       })
     );
+  }
+
+  async deleteComment(
+    workoutId: string,
+    commentId: string,
+    requesterId?: string
+  ) {
+    const refDoc = doc(db, WORKOUTS_COLLECTION, workoutId);
+    const snap = await getDoc(refDoc);
+    if (!snap.exists()) return;
+
+    const data = snap.data() as Workout;
+    const comments: Comment[] = data.comments || [];
+    const comment = comments.find((c) => c.id === commentId);
+    if (!comment) return;
+
+    // Only allow the comment author or the workout owner to delete
+    if (
+      requesterId &&
+      requesterId !== comment.userId &&
+      requesterId !== data.userId
+    ) {
+      throw new Error("Permission refusée");
+    }
+
+    const updated = comments.filter((c) => c.id !== commentId);
+    await updateDoc(refDoc, { comments: updated });
   }
 
   private async uploadPhoto(uri: string, userId: string) {

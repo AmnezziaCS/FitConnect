@@ -203,7 +203,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Card.Title>Date</Card.Title>
+        <Card.Title style={{ color: colors.text }}>Date</Card.Title>
         <Button
           title={date.toLocaleDateString("fr-FR")}
           onPress={() => setShowPicker(true)}
@@ -230,7 +230,9 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Card.Title>Photo (facultatif)</Card.Title>
+        <Card.Title style={{ color: colors.text }}>
+          Photo (facultatif)
+        </Card.Title>
         {photo ? (
           <>
             <Image source={{ uri: photo }} style={styles.photo} />
@@ -296,16 +298,18 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Card.Title>Type d&apos;entraînement</Card.Title>
+        <Card.Title style={{ color: colors.text }}>
+          Type d&apos;entraînement
+        </Card.Title>
         <ButtonGroup
           buttons={workoutTypes.map((t) => t.label)}
           selectedIndex={typeIndex}
           onPress={setTypeIndex}
           containerStyle={styles.buttonGroup}
           buttonContainerStyle={{ borderColor: colors.borderLight }}
-          textStyle={{ color: colors.text }}
+          textStyle={{ color: "#000000ff" }}
           selectedButtonStyle={{ backgroundColor: colors.primary }}
-          selectedTextStyle={{ color: "#fff" }}
+          selectedTextStyle={{ color: "#f5f5f5ff" }}
         />
       </Card>
 
@@ -315,6 +319,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
         onChangeText={setDuration}
         keyboardType="numeric"
         placeholder="45"
+        style={{ color: colors.text }}
         leftIcon={<Icon type="feather" name="clock" size={18} />}
       />
 
@@ -325,6 +330,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
           onChangeText={setDistance}
           keyboardType="decimal-pad"
           placeholder="5.2"
+          style={{ color: colors.text }}
           leftIcon={<Icon type="feather" name="navigation" size={18} />}
         />
       )}
@@ -336,7 +342,9 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
             { backgroundColor: colors.card, borderColor: colors.border },
           ]}
         >
-          <Card.Title>Séance de musculation</Card.Title>
+          <Card.Title style={{ color: colors.text }}>
+            Séance de musculation
+          </Card.Title>
           {exercises.length === 0 && (
             <Text style={styles.placeholderText}>
               Ajoute tes exercices (nom + séries + reps)
@@ -363,6 +371,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
             </ListItem>
           ))}
           <Input
+            style={{ color: colors.text }}
             placeholder="Nom de l'exercice"
             value={exerciseName}
             onChangeText={setExerciseName}
@@ -374,6 +383,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
               onChangeText={setSets}
               keyboardType="numeric"
               containerStyle={styles.halfField}
+              style={{ color: colors.text }}
             />
             <Input
               placeholder="Répétitions"
@@ -381,6 +391,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
               onChangeText={setReps}
               keyboardType="numeric"
               containerStyle={styles.halfField}
+              style={{ color: colors.text }}
             />
           </View>
           <Button
@@ -398,6 +409,7 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
         placeholder="Sensations, météo, chrono, etc."
         multiline
         numberOfLines={4}
+        style={{ color: colors.text }}
       />
 
       <Card
@@ -406,7 +418,9 @@ export const AddWorkoutScreen: React.FC<Props> = ({ navigation }) => {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Card.Title>Ressenti global : {feeling}/10</Card.Title>
+        <Card.Title style={{ color: colors.text }}>
+          Ressenti global : {feeling}/10
+        </Card.Title>
         <Slider
           value={feeling}
           onValueChange={setFeeling}
@@ -506,5 +520,8 @@ const styles = StyleSheet.create({
   },
   screenSubtitle: {
     marginBottom: 16,
+  },
+  text: {
+    color: "white",
   },
 });

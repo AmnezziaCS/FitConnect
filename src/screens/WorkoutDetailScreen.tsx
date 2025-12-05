@@ -1,14 +1,17 @@
+import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Avatar, Button, Card, Divider, ListItem, Text } from "@rneui/themed";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   Image,
   ScrollView,
   StyleSheet,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
@@ -26,6 +29,7 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const scale = useRef(new Animated.Value(1)).current;
 
   const loadWorkout = async () => {
     try {
@@ -51,8 +55,22 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleLike = async () => {
     if (!user || !workout) return;
     try {
+      // user feedback animation
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.2,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1.0,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
       setIsLiked((prev) => !prev);
-      await workoutService.toggleLike(workout.id, user.id);
+      await workoutService.toggleLike(workout.id, user.id, user.displayName);
       await loadWorkout();
     } catch {
       Alert.alert("Erreur", "Impossible de liker.");
@@ -98,6 +116,31 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         },
       ]
     );
+  };
+
+  const handleDeleteComment = (commentId: string, authorId?: string) => {
+    if (!user || !workout) return;
+
+    if (user.id !== authorId && user.id !== workout.userId) {
+      Alert.alert("Permission", "Vous ne pouvez pas supprimer ce commentaire.");
+      return;
+    }
+
+    Alert.alert("Supprimer le commentaire", "Confirmer la suppression ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await workoutService.deleteComment(workout.id, commentId, user.id);
+            await loadWorkout();
+          } catch (err) {
+            Alert.alert("Erreur", "Impossible de supprimer le commentaire.");
+          }
+        },
+      },
+    ]);
   };
 
   const getFeelingEmoji = (feeling: number) => {
@@ -162,8 +205,10 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             }}
           />
           <View style={styles.userInfo}>
-            <Text h4>{workout.userName}</Text>
-            <Text style={styles.dateText}>
+            <Text style={styles.notesLabel} h4>
+              {workout.userName}
+            </Text>
+            <Text style={styles.notesLabel}>
               {format(new Date(workout.date), "dd MMMM yyyy", { locale: fr })}
             </Text>
           </View>
@@ -228,6 +273,7 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           ]}
         >
           <Card.Title>Distance parcourue</Card.Title>
+
           <Divider />
           <View style={styles.distanceContainer}>
             <Text h2 style={styles.distanceValue}>
@@ -268,32 +314,29 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         ]}
       >
         <View style={styles.actionsRow}>
-          <Button
-            type={isLiked ? "solid" : "outline"}
-            icon={{
-              name: "heart",
-              type: "font-awesome",
-              size: 18,
-              color: isLiked ? "white" : "#FF6B6B",
-            }}
-            title={`${workout.likes.length} J'aime`}
+          <TouchableOpacity
             onPress={handleLike}
-            buttonStyle={[
-              styles.actionButton,
-              isLiked && { backgroundColor: "#FF6B6B" },
-            ]}
-          />
-          <Button
-            type="outline"
-            icon={{
-              name: "comment",
-              type: "font-awesome",
-              size: 18,
-              color: "#2196F3",
-            }}
-            title={`${workout.comments.length} Commentaires`}
-            buttonStyle={styles.actionButton}
-          />
+            style={styles.likeButton}
+            activeOpacity={0.8}
+          >
+            <Animated.View style={{ transform: [{ scale }] }}>
+              <Ionicons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={28}
+                color={isLiked ? "#FF6B6B" : "#FF6B6B"}
+              />
+            </Animated.View>
+            <Text style={[styles.actionText, { color: colors.text }]}>
+              {workout.likes.length} J&apos;aime
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.commentButtonContainer}>
+            <Ionicons name="chatbubble-outline" size={24} color="#2196F3" />
+            <Text style={[styles.actionText, { color: colors.text }]}>
+              {workout.comments.length} Commentaires
+            </Text>
+          </View>
         </View>
       </Card>
 
@@ -304,6 +347,7 @@ export const WorkoutDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         ]}
       >
         <Card.Title>Commentaires ({workout.comments.length})</Card.Title>
+
         <Divider />
         <View style={styles.addCommentContainer}>
           <TextInput
@@ -436,11 +480,11 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666",
+    color: "white",
   },
   infoValue: {
     fontSize: 16,
-    color: "#333",
+    color: "white",
   },
   divider: {
     marginVertical: 12,
@@ -451,12 +495,12 @@ const styles = StyleSheet.create({
   notesLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666",
+    color: "white",
     marginBottom: 8,
   },
   notesText: {
     fontSize: 15,
-    color: "#333",
+    color: "white",
     lineHeight: 22,
   },
   distanceContainer: {
@@ -475,6 +519,23 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     borderRadius: 8,
+  },
+  likeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  actionText: {
+    marginLeft: 8,
+    fontSize: 15,
+  },
+  commentButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   addCommentContainer: {
     flexDirection: "row",
