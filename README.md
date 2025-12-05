@@ -1,136 +1,55 @@
-# FitConnect - Réseau Social Sportif
+# 🏃‍♂️ FitConnect
 
-Application mobile React Native de réseau social sportif permettant aux utilisateurs de suivre leurs entraînements, interagir avec leurs amis et rester motivés.
+FitConnect is a modern fitness and social app built with React Native and Expo. It helps users track workouts, connect with friends, share progress, and stay motivated through reminders and messaging.
 
-## 🚀 Fonctionnalités
+## Overview
 
-### ✅ Authentification
+FitConnect offers the following features:
 
-- Inscription/Connexion avec email + mot de passe
-- Connexion via Google
-- Connexion via Apple (iOS)
-- Déconnexion
-- Suppression de compte avec données associées
+- **User Authentication**
+  - Email/password sign-up and login
+  - Google and Apple sign-in (see `README_GOOGLE_APPLE.md` for setup)
+- **Profile Management**
+  - Edit profile details and sports preferences
+  - Track daily steps (pedometer integration)
+- **Workout Tracking**
+  - Add, edit, and delete workouts (musculation, running, and more)
+  - View detailed workout history and statistics
+- **Feed**
+  - See workouts and activities from friends
+  - Like and comment on workouts
+- **Reminders & Notifications**
+  - Schedule daily workout reminders
+  - Receive push notifications for activities and messages
+- **Messaging**
+  - Real-time chat with friends
+  - Conversation list and message history
+- **Theming**
+  - Light and dark mode support
 
-### 👤 Profil Utilisateur
+## Installation
 
-- Informations de base (nom, photo, bio)
-- Sport favori personnalisable
-- Affichage du nombre total de pas (via podomètre natif)
-- Modification du profil
-- Thème clair/sombre/automatique
+### Prerequisites
 
-### 💪 Gestion des Entraînements
+- [Node.js](https://nodejs.org/) (v16+ recommended)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/)
+- (Optional) [EAS CLI](https://docs.expo.dev/eas/) for custom dev builds
 
-- **CRUD complet:**
-  - Ajouter un entraînement avec date, durée, notes, ressenti (1-10)
-  - Photo obligatoire (caméra ou galerie)
-  - Type d'entraînement: Musculation, Course, Autre
-  - **Musculation:** exercices / séries / répétitions
-  - **Course:** distance parcourue
-  - Modifier un entraînement
-  - Supprimer un entraînement
-- Fil d'actualité avec entraînements de l'utilisateur et amis
-- Historique personnel
+### Steps
 
-### 🤝 Interaction Sociale
+1. **Clone the repository**
 
-- Bouton "like" avec icône dynamique ❤️
-- Zone de commentaires avec CRUD complet
-- Notifications push:
-  - Nouveau like sur un entraînement
-  - Nouveau commentaire
-  - Rappels d'entraînement personnalisés
+  ```powershell
+  git clone https://github.com/AmnezziaCS/FitConnect.git
+  cd FitConnect
+  ```
 
-### 💬 Messagerie Interne
+2. **Install dependencies**
 
-- Chat 1-1 entre utilisateurs
-- Liste des conversations récentes
-- Messages en temps réel
-- Notifications push pour nouveaux messages
-
-### 📱 APIs Natives
-
-- **Podomètre:** Comptage des pas avec Expo Sensors
-- **Caméra/Galerie:** Capture et sélection de photos
-- **Notifications locales:** Rappels d'entraînement personnalisables
-
-### 🎨 Design & UX
-
-- Composants UI maison (Button, Input, Card, Modal)
-- Système de couleurs centralisé
-- Mode clair/sombre
-- Typographies personnalisées (Poppins + Inter)
-- Animations fluides
-
-## 📦 Structure du Projet
-
-```
-fitconnect/
-├── src/
-│   ├── components/
-│   │   ├── ui/
-│   │   │   ├── Button.tsx
-│   │   │   ├── Input.tsx
-│   │   │   ├── Card.tsx
-│   │   │   └── Modal.tsx
-│   │   └── WorkoutCard.tsx
-│   ├── screens/
-│   │   ├── LoginScreen.tsx
-│   │   ├── FeedScreen.tsx
-│   │   ├── ProfileScreen.tsx
-│   │   ├── AddWorkoutScreen.tsx
-│   │   ├── ChatScreen.tsx
-│   │   └── ConversationsScreen.tsx
-│   ├── services/
-│   │   ├── authService.ts
-│   │   ├── workoutService.ts
-│   │   ├── userService.ts
-│   │   ├── messageService.ts
-│   │   └── notificationService.ts
-│   ├── contexts/
-│   │   └── ThemeContext.tsx
-│   ├── store/
-│   │   └── authStore.ts
-│   ├── hooks/
-│   │   └── usePedometer.ts
-│   ├── theme/
-│   │   ├── colors.ts
-│   │   └── typography.ts
-│   ├── types/
-│   │   └── index.ts
-│   └── config/
-│       └── firebase.ts
-├── App.tsx
-├── package.json
-└── README.md
-```
-
-## 🛠️ Installation
-
-### Prérequis
-
-- Node.js >= 16
-- npm ou yarn
-- Expo CLI
-- Compte Firebase
-
-### Étapes
-
-1. **Cloner le projet**
-
-```bash
-git clone <repo-url>
-cd fitconnect
-```
-
-2. **Installer les dépendances**
-
-```bash
-npm install
-# ou
-yarn install
-```
+  ```powershell
+  npm install
+  ```
 
 3. **Configuration Firebase**
 
@@ -140,7 +59,7 @@ yarn install
 - Créer un bucket Storage
 - Activer Cloud Messaging
 
-4. **Configurer les identifiants Firebase
+4. **Configurer les identifiants Firebase**
 
 Dans `src/config/firebase.ts`, remplacer les valeurs par celles de votre projet:
 
@@ -155,22 +74,18 @@ const firebaseConfig = {
 };
 ```
 
-5. **Configuration Google Sign-In**
-Dans `src/services/authService.ts`:
+5. **Configure environment**
 
-```typescript
-GoogleSignin.configure({
-  webClientId: 'VOTRE_WEB_CLIENT_ID',
-});
-```
+- Set up Google and Apple sign-in by following `README_GOOGLE_APPLE.md`.
+- Update `app.json` with your credentials and settings.
 
-6. **Lancer l'application**
+6. **Start the app**
 
-```bash
-npm start
-# ou
-expo start
-```
+  ```powershell
+  npx expo start
+  ```
+
+- Use the Expo Go app on your device, or run on an emulator (`npm run android` or `npm run ios`).
 
 ## 📋 Configuration Firestore
 
@@ -292,35 +207,14 @@ service cloud.firestore {
 }
 ```
 
-## 📱 Plateformes Supportées
+## Folder Structure
 
-- ✅ iOS
-- ✅ Android
-- ⚠️ Web (limité - certaines APIs natives non disponibles)
-
-## 🎨 Personnalisation
-
-### Couleurs
-
-Modifier les couleurs dans `src/theme/colors.ts`
-
-### Typographies
-
-Changer les polices dans `src/theme/typography.ts`
-
-## 🚧 Fonctionnalités à Venir
-
-- [ ] Recherche d'utilisateurs
-- [ ] Système d'amis avec demandes
-- [ ] Statistiques avancées
-- [ ] Objectifs d'entraînement
-- [ ] Groupes d'entraînement
-- [ ] Partage sur réseaux sociaux
-
-## 🐛 Problèmes Connus
-
-- Le podomètre nécessite les permissions appropriées sur iOS/Android
-- Apple Sign-In disponible uniquement sur iOS
-- Les notifications push nécessitent une configuration supplémentaire
-
-Développé avec ❤️ pour la communauté sportive
+- `src/` — Main source code
+  - `components/` — Reusable UI components
+  - `screens/` — App screens (Feed, Profile, Workouts, Chat, etc.)
+  - `services/` — API and business logic
+  - `contexts/` — Theme and global state
+  - `hooks/` — Custom React hooks
+  - `store/` — State management
+  - `theme/` — Colors and typography
+  - `types/` — TypeScript types
